@@ -1,0 +1,50 @@
+[workspace]
+members = [
+    "crates/allowance-types",
+    "crates/allowance-config",
+    "crates/allowance-domain",
+    "crates/allowance-repo",
+    "crates/allowance-service",
+    "crates/allowance-api",
+    "crates/allowance-tests",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.94.1"
+
+[workspace.dependencies]
+# Internal crates
+allowance-types = { path = "crates/allowance-types" }
+allowance-config = { path = "crates/allowance-config" }
+allowance-domain = { path = "crates/allowance-domain" }
+allowance-repo = { path = "crates/allowance-repo" }
+allowance-service = { path = "crates/allowance-service" }
+allowance-api = { path = "crates/allowance-api" }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async
+tokio = { version = "1", features = ["full"] }
+
+# Web framework
+axum = "0.7"
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "uuid", "chrono"] }
+
+# Types
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+thiserror = "1"
+anyhow = "1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Agent",
+      "ToolSearch",
+      "TodoWrite",
+      "Skill(update-config *)",
+      "Bash",
+      "Edit(/.claude/**)",
+      "Write(/.claude/**)",
+      "Read(/.claude/**)"
+    ],
+    "additionalDirectories": [
+      "/Users/ereichert/dev/allowance/.claude"
+    ]
+  }
+}

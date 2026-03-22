@@ -1,0 +1,12 @@
+[package]
+name = "allowance-service"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+allowance-types.workspace = true
+allowance-config.workspace = true
+allowance-domain.workspace = true
+allowance-repo.workspace = true
+thiserror.workspace = true
