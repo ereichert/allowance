@@ -74,6 +74,17 @@ Key constraints:
 
 Violations will be caught by structural tests. See: [docs/architecture.md](docs/architecture.md)
 
+## Test-First Development (ENFORCED)
+
+All agents MUST write the full test suite for a feature or change **before writing any production code**. Tests define the expected behavior; implementation follows.
+
+This applies to every layer: domain logic, repository, service, API handlers, and frontend components/hooks.
+
+Exceptions (no test required):
+
+- Pure configuration or wiring (e.g., adding a route to a router that delegates entirely to already-tested handlers)
+- Generated or third-party code
+
 ## Key Conventions
 
 ### Rust (backend)
