@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Bootstrap script for the Allowance dev environment.
+# Requires nothing pre-installed — run this first on any new macOS machine.
+set -euo pipefail
+
+echo "==> Allowance dev environment bootstrap"
+echo ""
+
+# Install Homebrew if not present
+if ! command -v brew &>/dev/null; then
+    echo "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    # Add brew to PATH for the remainder of this script (Apple Silicon path)
+    if [ -f /opt/homebrew/bin/brew ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    fi
+else
+    echo "Homebrew already installed."
+fi
+
+# Install prerequisites
+echo "Installing prerequisites (colima, docker, docker-compose, just)..."
+brew install colima docker docker-compose just
+
+# Start Colima (container runtime VM)
+if colima status 2>/dev/null | grep -q "Running"; then
+    echo "Colima already running."
+else
+    echo "Starting Colima..."
+    colima start
+fi
+
+echo ""
+echo "Bootstrap complete."
+echo ""
+echo "Next steps:"
+echo "  1. cp .env.containers.sample .env.containers   # optional: override defaults"
+echo "  2. just build-image                            # build the dev Docker image (~5-10 min)"
+echo "  3. just up                                     # start all containers"
+echo "  4. just build                                  # compile backend and frontend"

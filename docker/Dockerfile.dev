@@ -1,0 +1,49 @@
+# Stage 1: fingerprint the dependency graph (no source needed)
+FROM lukemathwalker/cargo-chef:latest-rust-1.94.1 AS planner
+WORKDIR /app/backend
+COPY backend/ .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# Stage 2: compile all dependencies
+# This layer is cached by Docker and only re-runs when Cargo.toml/Cargo.lock change.
+FROM lukemathwalker/cargo-chef:latest-rust-1.94.1 AS cacher
+WORKDIR /app/backend
+COPY --from=planner /app/backend/recipe.json recipe.json
+RUN cargo chef cook --recipe-path recipe.json
+
+# Stage 3: final dev image
+FROM rust:1.94.1-slim AS dev
+
+# System libs required by sqlx-cli postgres feature
+RUN apt-get update && apt-get install -y \
+    curl \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Node.js 22.x via NodeSource
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Rust dev tools
+# sqlx-cli: postgres feature only (skips sqlite, saves ~2 min build time)
+# cargo-nextest: --locked prevents lockfile mutation during install
+# rustfmt and clippy are declared in backend/rust-toolchain.toml and installed
+# automatically by rustup when cargo first runs in the backend directory.
+RUN cargo install cargo-watch \
+    && cargo install sqlx-cli --no-default-features --features postgres \
+    && cargo install cargo-nextest --locked \
+    && cargo install just
+
+WORKDIR /app
+
+# Seed the image with pre-compiled dependency artifacts from the cacher stage.
+# On first container start these populate the named Docker volumes so that
+# cargo build skips compiling all dependencies.
+COPY --from=cacher /app/backend/target /app/backend/target
+COPY --from=cacher /usr/local/cargo/registry /usr/local/cargo/registry
+
+# Source code is volume-mounted at runtime — not baked into the image.
+CMD ["sleep", "infinity"]

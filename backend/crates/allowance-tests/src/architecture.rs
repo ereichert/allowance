@@ -17,7 +17,10 @@ fn allowed_deps() -> HashMap<&'static str, Vec<&'static str>> {
     // Layer 2: types only (domain must be DB-agnostic)
     m.insert("allowance-domain", vec!["allowance-types"]);
     // Layer 3: types + domain (no config, no service, no api)
-    m.insert("allowance-repo", vec!["allowance-types", "allowance-domain"]);
+    m.insert(
+        "allowance-repo",
+        vec!["allowance-types", "allowance-domain"],
+    );
     // Layer 4: types + config + domain + repo
     m.insert(
         "allowance-service",

@@ -15,7 +15,9 @@
       "Bash",
       "Edit(/.claude/**)",
       "Write(/.claude/**)",
-      "Read(/.claude/**)"
+      "Read(/.claude/**)",
+      "Skill(commit)",
+      "Skill(commit:*)"
     ],
     "additionalDirectories": [
       "/Users/ereichert/dev/allowance/.claude"

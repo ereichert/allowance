@@ -1,0 +1,52 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    volumes:
+      # Bind mount: source code from host is live inside the container
+      - .:/app
+      # Named volumes override the bind mount subdirs with Linux-compatible artifacts.
+      # Docker resolves overlapping mounts correctly: named volume wins for its path.
+      - backend-target:/app/backend/target
+      - frontend-node-modules:/app/frontend/node_modules
+      - cargo-registry:/usr/local/cargo/registry
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      # Signal used by the justfile to detect it is running inside the container
+      IN_CONTAINER: "1"
+      DATABASE_URL: ${DATABASE_URL:-postgres://allowance:allowance@postgres:5432/allowance}
+      LISTEN_ADDR: ${LISTEN_ADDR:-0.0.0.0:3000}
+      RUST_LOG: ${RUST_LOG:-info}
+      # VITE_ prefix is required for Vite to expose this to browser code.
+      # Value uses localhost because the browser hits the host-forwarded port.
+      VITE_ALLOWANCE_API_URL: ${VITE_ALLOWANCE_API_URL:-http://localhost:3000}
+    command: sleep infinity
+    depends_on:
+      postgres:
+        condition: service_healthy
+    working_dir: /app
+
+  postgres:
+    image: postgres:17
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-allowance}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-allowance}
+      POSTGRES_DB: ${POSTGRES_DB:-allowance}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-allowance} -d ${POSTGRES_DB:-allowance}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  backend-target:
+  frontend-node-modules:
+  postgres-data:
+  cargo-registry:
