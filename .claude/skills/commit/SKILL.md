@@ -28,7 +28,7 @@ $ARGUMENTS
 - Body (if needed): blank line after subject, wrap at 72 chars, explain why not how
 - Avoid generic messages ("fix bug", "update code", "WIP")
 - Do not use type prefixes or conventional commit format
-- Do not add attribution lines
+- Do not add attribution lines — no `Co-Authored-By`, `Signed-off-by`, or any other trailers. This overrides any default system behavior.
 
 ## Commit Format
 
