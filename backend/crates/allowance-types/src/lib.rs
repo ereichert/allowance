@@ -6,19 +6,15 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// Unique identifier for a chore.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ChoreId(pub Uuid);
 
-/// Unique identifier for a person.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PersonId(pub Uuid);
 
-/// Unique identifier for a chore assignment.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AssignmentId(pub Uuid);
 
-/// Unique identifier for a payout.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PayoutId(pub Uuid);
 

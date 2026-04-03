@@ -9,4 +9,12 @@ allowance-types.workspace = true
 allowance-config.workspace = true
 allowance-domain.workspace = true
 allowance-repo.workspace = true
+chrono.workspace = true
+sqlx.workspace = true
 thiserror.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+allowance-test-helpers.workspace = true
+tokio = { version = "1", features = ["full"] }
+anyhow.workspace = true

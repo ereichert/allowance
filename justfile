@@ -141,7 +141,7 @@ test: _check-dev
     set -euo pipefail
     if [ -n "{{in_container}}" ]; then
         cd backend && cargo nextest run
-        cd ../frontend && npm run test:architecture
+        cd ../frontend && npm run test:architecture && npm test
     else
         {{_compose}} exec dev just test
     fi
