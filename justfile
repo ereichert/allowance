@@ -109,7 +109,7 @@ dev-backend: _check-dev
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -n "{{in_container}}" ]; then
-        cd backend && cargo watch -x run
+        cd backend && cargo watch --poll -x run
     else
         {{_compose}} exec dev just dev-backend
     fi
