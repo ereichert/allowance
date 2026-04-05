@@ -22,9 +22,9 @@ name = "allowance-api"
 version = "0.1.0"
 dependencies = [
  "allowance-config",
+ "allowance-domain",
  "allowance-service",
  "allowance-test-helpers",
- "allowance-types",
  "axum",
  "chrono",
  "serde",
@@ -42,7 +42,7 @@ dependencies = [
 name = "allowance-config"
 version = "0.1.0"
 dependencies = [
- "allowance-types",
+ "allowance-domain",
  "serde",
 ]
 
@@ -50,9 +50,10 @@ dependencies = [
 name = "allowance-domain"
 version = "0.1.0"
 dependencies = [
- "allowance-types",
  "chrono",
+ "serde",
  "thiserror 1.0.69",
+ "uuid",
 ]
 
 [[package]]
@@ -61,7 +62,6 @@ version = "0.1.0"
 dependencies = [
  "allowance-domain",
  "allowance-test-helpers",
- "allowance-types",
  "anyhow",
  "chrono",
  "sqlx",
@@ -78,7 +78,6 @@ dependencies = [
  "allowance-domain",
  "allowance-repo",
  "allowance-test-helpers",
- "allowance-types",
  "anyhow",
  "chrono",
  "sqlx",
@@ -98,15 +97,6 @@ dependencies = [
 [[package]]
 name = "allowance-tests"
 version = "0.1.0"
-
-[[package]]
-name = "allowance-types"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "serde",
- "uuid",
-]
 
 [[package]]
 name = "android_system_properties"

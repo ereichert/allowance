@@ -1,8 +1,23 @@
 //! Domain model and validation for chores.
 
-use allowance_types::{ChoreId, Recurrence};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use uuid::Uuid;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ChoreId(pub Uuid);
+
+/// How often a chore recurs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Recurrence {
+    Daily,
+    Weekly,
+    Biweekly,
+    Monthly,
+    Custom(String),
+}
 
 #[derive(Debug, Clone)]
 pub struct Chore {

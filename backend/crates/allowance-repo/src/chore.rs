@@ -1,7 +1,6 @@
 //! Repository operations for chores and their assignments.
 
-use allowance_domain::{Chore, ChoreAssignment, NewChore, NewChoreAssignment};
-use allowance_types::{AssignmentId, AssignmentStatus, ChoreId, PersonId, Recurrence};
+use allowance_domain::{AssignmentId, AssignmentStatus, Chore, ChoreAssignment, ChoreId, NewChore, NewChoreAssignment, PersonId, Recurrence};
 use chrono::{DateTime, Utc};
 use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;

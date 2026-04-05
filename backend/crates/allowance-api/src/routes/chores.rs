@@ -2,7 +2,7 @@
 
 use super::ApiError;
 use allowance_service::chore::{create_chore, NewChore};
-use allowance_types::Recurrence;
+use allowance_domain::Recurrence;
 use axum::{
     extract::State,
     http::StatusCode,

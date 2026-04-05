@@ -23,18 +23,17 @@ Dependencies flow strictly downward. A crate may only import crates above it.
 This is enforced by structural tests in `backend/tests/`.
 
 ```text
-Layer 0: allowance-types    — Shared types, enums, IDs. No business logic.
-Layer 1: allowance-config   — Configuration loading. Depends on: types
-Layer 2: allowance-domain   — Business rules, validation. Depends on: types
-Layer 3: allowance-repo     — Database access (SQLx). Depends on: types, domain
-Layer 4: allowance-service  — Orchestration. Depends on: types, config, domain, repo
-Layer 5: allowance-api      — HTTP handlers. Depends on: types, config, service
+Layer 0: allowance-domain   — Core types, enums, IDs, business rules, validation. No DB.
+Layer 1: allowance-config   — Configuration loading. Depends on: domain
+Layer 2: allowance-repo     — Database access (SQLx). Depends on: domain
+Layer 3: allowance-service  — Orchestration. Depends on: config, domain, repo
+Layer 4: allowance-api      — HTTP handlers. Depends on: config, service, domain
 ```
 
 ### Rules
 
 1. No crate may depend on a crate at a higher layer number.
-2. `allowance-types` has zero internal dependencies — it is the foundation.
+2. `allowance-domain` has zero internal dependencies — it is the foundation.
 3. `allowance-domain` must not depend on `repo` (business rules are DB-agnostic).
 4. `allowance-api` must not depend on `repo` directly — all data access goes through `service`.
 5. No circular dependencies.

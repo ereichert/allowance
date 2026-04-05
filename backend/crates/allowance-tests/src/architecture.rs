@@ -9,32 +9,22 @@ use std::path::Path;
 
 fn allowed_deps() -> HashMap<&'static str, Vec<&'static str>> {
     let mut m = HashMap::new();
-    m.insert("allowance-types", vec![]);
-    m.insert("allowance-config", vec!["allowance-types"]);
-    m.insert("allowance-domain", vec!["allowance-types"]);
-    m.insert(
-        "allowance-repo",
-        vec!["allowance-types", "allowance-domain"],
-    );
+    m.insert("allowance-domain", vec![]);
+    m.insert("allowance-config", vec!["allowance-domain"]);
+    m.insert("allowance-repo", vec!["allowance-domain"]);
     m.insert(
         "allowance-service",
-        vec![
-            "allowance-types",
-            "allowance-config",
-            "allowance-domain",
-            "allowance-repo",
-        ],
+        vec!["allowance-config", "allowance-domain", "allowance-repo"],
     );
     m.insert(
         "allowance-api",
-        vec!["allowance-types", "allowance-config", "allowance-service"],
+        vec!["allowance-config", "allowance-service", "allowance-domain"],
     );
     m
 }
 
 fn internal_crates() -> Vec<&'static str> {
     vec![
-        "allowance-types",
         "allowance-config",
         "allowance-domain",
         "allowance-repo",

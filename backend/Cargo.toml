@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "crates/allowance-types",
     "crates/allowance-config",
     "crates/allowance-domain",
     "crates/allowance-repo",
@@ -18,7 +17,6 @@ rust-version = "1.94.1"
 
 [workspace.dependencies]
 # Internal crates
-allowance-types = { path = "crates/allowance-types" }
 allowance-test-helpers = { path = "crates/allowance-test-helpers" }
 allowance-config = { path = "crates/allowance-config" }
 allowance-domain = { path = "crates/allowance-domain" }

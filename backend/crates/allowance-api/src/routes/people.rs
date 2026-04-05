@@ -2,7 +2,7 @@
 
 use super::ApiError;
 use allowance_service::person::{list_people, ListPeopleQuery};
-use allowance_types::Role;
+use allowance_domain::Role;
 use axum::{
     extract::{Query, State},
     http::StatusCode,

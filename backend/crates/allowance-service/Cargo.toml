@@ -5,7 +5,6 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-allowance-types.workspace = true
 allowance-config.workspace = true
 allowance-domain.workspace = true
 allowance-repo.workspace = true

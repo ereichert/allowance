@@ -1,8 +1,7 @@
 //! Service operations for chores.
 
 pub use allowance_domain::NewChore;
-use allowance_domain::{Chore, ChoreAssignment, NewChoreAssignment};
-use allowance_types::PersonId;
+use allowance_domain::{Chore, ChoreAssignment, NewChoreAssignment, PersonId};
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;

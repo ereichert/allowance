@@ -5,7 +5,6 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-allowance-types.workspace = true
 allowance-domain.workspace = true
 chrono.workspace = true
 sqlx.workspace = true

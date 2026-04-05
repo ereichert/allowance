@@ -22,9 +22,8 @@ See [docs/agent-workflow.md](docs/agent-workflow.md) for the full workflow.
 allowance/
 ├── backend/                  # Rust workspace
 │   ├── crates/
-│   │   ├── allowance-types/  # Shared types, no business logic
+│   │   ├── allowance-domain/ # Core types, enums, business rules, and domain models
 │   │   ├── allowance-config/ # Configuration loading (reads LISTEN_ADDR, DATABASE_URL)
-│   │   ├── allowance-domain/ # Business rules and domain logic
 │   │   ├── allowance-repo/   # Data access (database)
 │   │   ├── allowance-service/# Orchestration layer
 │   │   └── allowance-api/    # HTTP handlers (Axum) + main.rs
@@ -54,7 +53,7 @@ Crates follow a strict import hierarchy. A crate may only depend on crates
 above it in this list:
 
 ```text
-types → config → domain → repo → service → api
+domain → config → repo → service → api
 ```
 
 ### Frontend

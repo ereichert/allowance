@@ -1,7 +1,6 @@
 //! Repository operations for people.
 
-use allowance_domain::Person;
-use allowance_types::{PersonId, Role};
+use allowance_domain::{Person, PersonId, Role};
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
