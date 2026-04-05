@@ -1,0 +1,17 @@
+[package]
+name = "allowance-repo"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+allowance-domain.workspace = true
+chrono.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+allowance-test-helpers.workspace = true
+tokio = { version = "1", features = ["full"] }
+anyhow.workspace = true

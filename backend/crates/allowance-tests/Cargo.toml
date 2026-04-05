@@ -1,0 +1,12 @@
+[package]
+name = "allowance-tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+# This crate exists only for structural/integration tests.
+# It has no library code.
+
+[[test]]
+name = "architecture"
+path = "src/architecture.rs"

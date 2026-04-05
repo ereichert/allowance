@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/ereichert/dev/allowance && git diff --quiet -- backend/ frontend/ && git diff --cached --quiet -- backend/ frontend/ || just test"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Agent",
+      "ToolSearch",
+      "TodoWrite",
+      "Skill(update-config *)",
+      "Bash",
+      "Edit(/.claude/**)",
+      "Write(/.claude/**)",
+      "Read(/.claude/**)",
+      "Skill(commit)",
+      "Skill(commit:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/ereichert/dev/allowance/.claude"
+    ]
+  }
+}
