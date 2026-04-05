@@ -49,6 +49,21 @@ While the dev servers are running:
 - Open `http://localhost:5173` in your browser — React frontend
 - `curl http://localhost:3000/health` — returns `ok` when the backend is up
 
+## Task Completion Checklist
+
+Before ending any task that modifies code:
+
+- [ ] `just test` passes with no failures
+- [ ] `just lint` passes (clippy + ESLint, zero warnings)
+- [ ] `just fmt` was run — all files are formatted
+- [ ] All new list endpoints support pagination and at least one filter
+- [ ] All multi-row database writes use transactions; bulk inserts where applicable
+- [ ] Both happy paths and error paths have test coverage
+- [ ] No test contains inline comments explaining what it does — rename or extract instead
+- [ ] Use `/commit` to commit (never `git commit` directly)
+
+`just test` is the final gate. If the Stop hook fires and reports failures, fix them before closing the session.
+
 ## Running Arbitrary Commands in the Container
 
 ```sh

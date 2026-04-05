@@ -35,6 +35,14 @@
 - Integration tests: `backend/tests/` directory
 - Test names describe the scenario: `fn assigning_chore_to_person_creates_pending_assignment()`
 - Use `assert!` / `assert_eq!` with descriptive messages
+- Test both the happy path and all documented error paths.
+- Test function names must fully describe the scenario: `fn returns_error_when_description_is_blank()` — not `fn test_error()`.
+- No inline comments inside test bodies — rename the test or extract a helper instead.
+
+### Database
+
+- Every operation writing to multiple tables or inserting a collection must use an explicit `sqlx` transaction (`pool.begin()` / `tx.commit()`).
+- Prefer a single bulk `INSERT ... VALUES (row1), (row2)` over a loop of individual inserts.
 
 ### Dependencies
 
@@ -77,6 +85,13 @@
 - All HTTP calls go through `src/api/client.ts`
 - Request/response types mirror the backend API contracts doc
 - Use custom hooks (`useChores`, `useAssignments`) to wrap API calls
+
+### Testing
+
+- Test files: `ComponentName.test.tsx` / `hookName.test.ts`, co-located with the module under test.
+- Test both the happy path and error states (API errors, empty results, loading states).
+- Test names must be self-descriptive: `it('shows an error when the API returns 500')` — no explanatory inline comments.
+- Frontend tests run separately from backend tests. Debug failures in their own context.
 
 ## Both Languages
 

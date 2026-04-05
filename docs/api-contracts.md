@@ -13,7 +13,9 @@
 - Dates use ISO 8601 format (`2026-03-22`)
 - Timestamps use ISO 8601 with timezone (`2026-03-22T14:30:00Z`)
 - UUIDs for all entity identifiers
-- Pagination via `?page=1&per_page=20` (default 20, max 100)
+- All endpoints returning a list **must** support pagination via `?page=1&per_page=20` (default 20, max 100). No exceptions for "small" collections.
+- All list endpoints **must** support at least one filter or search parameter. Supported parameters must be documented in the endpoint definition.
+- List response envelope: `{ "items": [...], "total": N, "page": N, "per_page": N }` — see the GET /people example below.
 - Errors return `{ "error": "message" }` with appropriate HTTP status
 
 ## Endpoints

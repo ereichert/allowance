@@ -79,6 +79,13 @@ All agents MUST write the full test suite for a feature or change **before writi
 
 This applies to every layer: domain logic, repository, service, API handlers, and frontend components/hooks.
 
+### Test Coverage Requirements
+
+- Cover both happy paths and every documented error path. A test suite with no error-path coverage is incomplete.
+- Tests must be self-descriptive. Name the test to describe the scenario; do not add comments inside test bodies to explain what is being tested.
+- Backend tests and frontend tests are separate concerns. Never mix them in the same file or test run.
+- Run `just test` and verify it passes before considering any code-changing task complete.
+
 Exceptions (no test required):
 
 - Pure configuration or wiring (e.g., adding a route to a router that delegates entirely to already-tested handlers)
@@ -93,6 +100,7 @@ Exceptions (no test required):
 - Error handling: use `thiserror` for library errors, `anyhow` only in main/tests
 - Structured logging via `tracing`
 - Tests live in `tests/` submodules within each crate, plus integration tests in `backend/tests/`
+- Database writes touching multiple rows must use a transaction. Prefer bulk `INSERT ... VALUES (...)` over per-row inserts in loops.
 
 ### TypeScript (frontend)
 
@@ -103,9 +111,10 @@ Exceptions (no test required):
 
 ### Both
 
-- No single file exceeds 300 lines. Split if approaching limit.
 - Names are descriptive: no abbreviations except universally known ones (id, url, api)
 - Every public function/component has a brief doc comment explaining *why* it exists
+- Every list endpoint must support pagination and at least one filter parameter. See [API Contracts](docs/api-contracts.md) for the required envelope shape.
+- Follow naming conventions exactly as specified in [Style Guide](docs/style-guide.md). Violations are not acceptable.
 
 ## Documentation
 
