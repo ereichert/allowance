@@ -135,3 +135,36 @@ implement. See each doc for details:
 - `develop` — integration branch
 - Feature branches off `develop`, merged via PR
 - Use `/commit` skill for all commits
+
+## GitHub Integration
+
+Use `gh` for **all** GitHub interactions (issues, PRs, labels, milestones). Do not use the GitHub web UI or direct API calls.
+
+### Issues
+
+Every feature or bug fix must have a corresponding GitHub issue.
+
+- If the user explicitly provides an issue number, use it directly.
+- Otherwise, check for an existing open issue (`gh issue list`) and **confirm the correct issue with the user** before proceeding.
+- Only create a new issue (`gh issue create`) if none exists.
+
+Reference the issue number in branch names: `feature/gh-123-short-description`
+
+Every commit message must use this format:
+
+```text
+[gh-<issue #>] Short summary of commit content.
+```
+
+### Pull Requests
+
+When work is ready for review, open a PR targeting `develop`:
+
+```sh
+gh pr create --base develop
+```
+
+- **Title format**: `[<issue #>] Short summary` (same as commit format, without the `gh-` prefix)
+- **Body**: a high-level, human-readable description of the change (surface-level technical details) followed by a test plan checklist
+
+Add `Closes #<number>` in the PR body to automatically close the issue on merge. To close manually after merge: `gh issue close <number>`.

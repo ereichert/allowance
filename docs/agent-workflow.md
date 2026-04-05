@@ -61,6 +61,8 @@ Before ending any task that modifies code:
 - [ ] Both happy paths and error paths have test coverage
 - [ ] No test contains inline comments explaining what it does — rename or extract instead
 - [ ] Use `/commit` to commit (never `git commit` directly)
+- [ ] A GitHub issue exists for this task (create with `gh issue create` if not)
+- [ ] PR opened with `gh pr create` referencing the issue number
 
 `just test` is the final gate. If the Stop hook fires and reports failures, fix them before closing the session.
 
