@@ -1,17 +1,4 @@
 {
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd /Users/ereichert/dev/allowance && git diff --quiet -- backend/ frontend/ && git diff --cached --quiet -- backend/ frontend/ || just test"
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Read",
@@ -30,10 +17,26 @@
       "Write(/.claude/**)",
       "Read(/.claude/**)",
       "Skill(commit)",
-      "Skill(commit:*)"
+      "Skill(commit:*)",
+      "Skill(review-pr)",
+      "Skill(review-pr:*)"
     ],
     "additionalDirectories": [
-      "/Users/ereichert/dev/allowance/.claude"
+      "/Users/ereichert/dev/allowance/.claude",
+      "/Users/ereichert/dev/allowance/.claude/skills"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/ereichert/dev/allowance && git diff --quiet -- backend/ frontend/ && git diff --cached --quiet -- backend/ frontend/ || just test"
+          }
+        ]
+      }
     ]
   }
 }
