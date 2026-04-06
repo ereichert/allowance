@@ -4,6 +4,7 @@
 import { useRef, useState } from 'react'
 import type { Person } from '../types/person'
 import type { CreateChoreRequest } from '../types/chore'
+import './AddChoreForm.css'
 
 interface AddChoreFormProps {
   people: Person[]
@@ -16,7 +17,7 @@ export function AddChoreForm({ people, onSave, disabled }: AddChoreFormProps) {
   const [valueDollars, setValueDollars] = useState('')
   const [dueAt, setDueAt] = useState('')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const descriptionRef = useRef<HTMLInputElement>(null)
+  const descriptionRef = useRef<HTMLTextAreaElement>(null)
 
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -40,21 +41,21 @@ export function AddChoreForm({ people, onSave, disabled }: AddChoreFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
+    <form className="add-chore-form" onSubmit={handleSubmit}>
+      <div className="add-chore-form__field">
         <label htmlFor="chore-description">Description</label>
-        <input
+        <textarea
           id="chore-description"
           ref={descriptionRef}
           autoFocus
-          type="text"
+          className="add-chore-form__description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
         />
       </div>
 
-      <div>
+      <div className="add-chore-form__field">
         <label htmlFor="chore-due-at">Due date and time</label>
         <input
           id="chore-due-at"
@@ -64,7 +65,7 @@ export function AddChoreForm({ people, onSave, disabled }: AddChoreFormProps) {
         />
       </div>
 
-      <div>
+      <div className="add-chore-form__field">
         <label htmlFor="chore-value">Value (dollars)</label>
         <input
           id="chore-value"
@@ -73,28 +74,33 @@ export function AddChoreForm({ people, onSave, disabled }: AddChoreFormProps) {
           step="0.01"
           value={valueDollars}
           onChange={(e) => setValueDollars(e.target.value)}
+          onWheel={(e) => e.currentTarget.blur()}
         />
       </div>
 
       {people.length > 0 && (
-        <fieldset>
+        <fieldset className="add-chore-form__assignees">
           <legend>Assigned to</legend>
-          {people.map((person) => (
-            <label key={person.id}>
-              <input
-                type="checkbox"
-                checked={selectedIds.includes(person.id)}
-                onChange={() => toggleAssignee(person.id)}
-              />
-              {person.name}
-            </label>
-          ))}
+          <div className="add-chore-form__assignees-list">
+            {people.map((person) => (
+              <label key={person.id}>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(person.id)}
+                  onChange={() => toggleAssignee(person.id)}
+                />
+                {person.name}
+              </label>
+            ))}
+          </div>
         </fieldset>
       )}
 
-      <button type="submit" disabled={disabled}>
-        Save
-      </button>
+      <div className="add-chore-form__actions">
+        <button className="add-chore-form__submit" type="submit" disabled={disabled}>
+          Save
+        </button>
+      </div>
     </form>
   )
 }

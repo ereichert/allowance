@@ -3,9 +3,11 @@
 
 import { useState } from 'react'
 import { AddChoreForm } from '../components/AddChoreForm'
+import { StatusMessage } from '../components/StatusMessage'
 import { useCreateChore } from '../hooks/useCreateChore'
 import { usePeople } from '../hooks/usePeople'
 import type { CreateChoreRequest } from '../types/chore'
+import './AddChorePage.css'
 
 export function AddChorePage() {
   const { submit, status, errorMessage, reset } = useCreateChore()
@@ -21,24 +23,17 @@ export function AddChorePage() {
     }
   }
 
+  const statusMessage = status === 'success' ? 'Chore saved successfully.' : errorMessage
+
   return (
-    <main>
-      <h1>Add Chore</h1>
-
-      {status === 'success' && (
-        <p role="status">Chore saved successfully.</p>
-      )}
-
-      {status === 'error' && errorMessage && (
-        <p role="alert">{errorMessage}</p>
-      )}
-
+    <div className="add-chore-page">
+      <StatusMessage status={status} message={statusMessage} />
       <AddChoreForm
         key={formKey}
         people={people}
         onSave={handleSubmit}
         disabled={status === 'loading'}
       />
-    </main>
+    </div>
   )
 }
