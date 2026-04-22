@@ -30,17 +30,25 @@ Run `just` (no args) or `just --list` to see all available commands.
 
 ## Running Dev Servers
 
-Dev servers are long-running — open two terminals:
+Dev servers start automatically when the containers come up — no extra terminals needed.
 
 ```sh
-# Terminal 1
-just dev-backend
-# Expected: "Allowance API starting" then "listening on 0.0.0.0:3000"
-
-# Terminal 2
-just dev-frontend
-# Expected: Vite output showing "Local: http://localhost:5173/"
+just up
 ```
+
+Both the backend (port 3000) and frontend (port 5173) start as separate Compose services
+and restart automatically if they crash.
+
+To watch their output:
+
+```sh
+just logs backend     # stream backend logs
+just logs frontend    # stream frontend logs
+just logs             # stream all container logs (backend + frontend + postgres)
+```
+
+`just dev-backend` and `just dev-frontend` are aliases for the targeted log streams above,
+kept for muscle-memory convenience.
 
 ## Validating Results
 
@@ -78,12 +86,14 @@ just exec bash -c 'cd /app/frontend && npm install'
 ## Container Lifecycle
 
 ```sh
-just up             # start all containers (detached)
-just down           # stop containers, keep volumes (fast restart)
-just status         # show running container status
-just logs           # tail all container logs
-just logs dev       # tail only the dev container logs
-just shell          # open a bash shell in the dev container
+just up               # start all containers (detached) — backend + frontend start automatically
+just down             # stop containers, keep volumes (fast restart)
+just status           # show running container status
+just logs             # tail all container logs
+just logs backend     # tail backend logs only
+just logs frontend    # tail frontend logs only
+just logs dev         # tail the dev shell container logs
+just shell            # open a bash shell in the dev container
 ```
 
 ## When to Rebuild the Image

@@ -104,26 +104,13 @@ build: _check-dev
         {{_compose}} exec dev just build
     fi
 
-# Start backend with auto-reload on source changes
-dev-backend: _check-dev
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if [ -n "{{in_container}}" ]; then
-        cd backend && cargo watch --poll -x run
-    else
-        {{_compose}} exec dev just dev-backend
-    fi
+# Stream live backend logs (the backend service runs automatically on 'just up')
+dev-backend:
+    {{_compose}} logs -f backend
 
-# Start Vite dev server
-# --host binds to 0.0.0.0 so port 5173 is reachable from outside the container
-dev-frontend: _check-dev
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if [ -n "{{in_container}}" ]; then
-        cd frontend && npm install && npm run dev -- --host
-    else
-        {{_compose}} exec dev just dev-frontend
-    fi
+# Stream live frontend logs (the frontend service runs automatically on 'just up')
+dev-frontend:
+    {{_compose}} logs -f frontend
 
 # Open a bash shell in the dev container
 shell: _check-dev
