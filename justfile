@@ -104,14 +104,6 @@ build: _check-dev
         {{_compose}} exec dev just build
     fi
 
-# Stream live backend logs (the backend service runs automatically on 'just up')
-dev-backend:
-    {{_compose}} logs -f backend
-
-# Stream live frontend logs (the frontend service runs automatically on 'just up')
-dev-frontend:
-    {{_compose}} logs -f frontend
-
 # Open a bash shell in the dev container
 shell: _check-dev
     {{_compose}} exec dev bash

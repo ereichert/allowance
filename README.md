@@ -42,20 +42,22 @@ just build                                  # compile backend and frontend
 
 ### Run the Dev Servers
 
-Open two terminals:
+Dev servers start automatically when the containers come up — no extra terminals needed:
 
 ```sh
-# Terminal 1 — backend (Axum, port 3000)
-just dev-backend
-
-# Terminal 2 — frontend (Vite, port 5173)
-just dev-frontend
+just up
 ```
-
-Once both are running:
 
 - **UI:** [http://localhost:5173](http://localhost:5173)
 - **API health check:** `curl http://localhost:3000/health` → `ok`
+
+To stream server output:
+
+```sh
+just logs backend     # backend only
+just logs frontend    # frontend only
+just logs             # all services combined
+```
 
 ### Common Commands
 

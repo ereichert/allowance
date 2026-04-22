@@ -47,9 +47,6 @@ just logs frontend    # stream frontend logs
 just logs             # stream all container logs (backend + frontend + postgres)
 ```
 
-`just dev-backend` and `just dev-frontend` are aliases for the targeted log streams above,
-kept for muscle-memory convenience.
-
 ## Validating Results
 
 While the dev servers are running:

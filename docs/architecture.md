@@ -115,7 +115,9 @@ Four containers (`just up` starts all of them):
 ```
 
 Source code is bind-mounted from the host into all containers. `backend/target/`
-and `frontend/node_modules/` use named Docker volumes shared across containers.
+and `frontend/node_modules/` use named Docker volumes to isolate Linux binaries
+from the macOS host filesystem; these volumes are shared across services that
+need them.
 
 Rust deps are pre-compiled via cargo-chef and baked into the dev image.
 After a source change, only your code recompiles. After a `Cargo.toml`
