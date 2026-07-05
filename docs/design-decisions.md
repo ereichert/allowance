@@ -73,6 +73,16 @@ Without this guard, a missing container produces a confusing Docker error ("cont
 
 The `frontend/node_modules` volume starts empty on first run and after `just nuke`. If `npm install` is not part of the recipe, the first invocation of any frontend task fails with `tsc: not found` or similar. Running `npm install` is idempotent — it is a no-op when the lockfile is satisfied — so embedding it adds negligible overhead while ensuring the task always works.
 
+The `frontend` Compose service's startup command uses `npm ci` instead, not `npm install`. `npm ci` fails on a stale lockfile rather than rewriting it. That matters for the service specifically because it runs unattended on every container start and every crash-triggered `restart: unless-stopped` — there is no human present to notice or commit a lockfile drift. The `just` recipes run under an operator's eye, so a self-correcting `npm install` is safe there.
+
+---
+
+## Separate Cargo Target Directory for the `backend` Service
+
+**Decision:** The `backend` service does not share the `dev` container's `backend-target` volume. It sets `CARGO_TARGET_DIR=/app/backend/target-bg`, backed by its own `backend-target-bg` volume.
+
+Cargo serializes writes to a target directory with a file lock. `backend` runs `cargo watch` continuously; if it shared `backend-target` with `dev`, a host-triggered `just build` or `just test` would block silently on that lock whenever `cargo watch` was mid-recompile, with no output or timeout to explain why. The two containers never need each other's build artifacts, so giving `backend` its own target directory removes the contention entirely.
+
 ---
 
 ## `just exec` Without `--`

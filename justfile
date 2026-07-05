@@ -47,11 +47,11 @@ up:
 down:
     {{_compose}} down
 
-# Build the dev image
+# Build all container images (dev, backend, frontend)
 build-image:
-    {{_compose}} build dev
+    {{_compose}} build
 
-# Rebuild the dev image (re-bakes Rust deps) then restart containers
+# Rebuild all container images (re-bakes Rust deps) then restart containers
 rebuild: build-image up
 
 # Show container status
@@ -73,7 +73,8 @@ nuke:
     echo ""
     echo "  This will stop all containers and DELETE all Docker volumes:"
     echo "    - postgres-data         (your database will be erased)"
-    echo "    - backend-target        (compiled Rust artifacts)"
+    echo "    - backend-target        (compiled Rust artifacts, dev container)"
+    echo "    - backend-target-bg     (compiled Rust artifacts, backend container)"
     echo "    - frontend-node-modules"
     echo "    - cargo-registry"
     echo ""

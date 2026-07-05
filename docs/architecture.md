@@ -116,8 +116,10 @@ Four containers (`just up` starts all of them):
 
 Source code is bind-mounted from the host into all containers. `backend/target/`
 and `frontend/node_modules/` use named Docker volumes to isolate Linux binaries
-from the macOS host filesystem; these volumes are shared across services that
-need them.
+from the macOS host filesystem. The `backend` container does not share `dev`'s
+`backend-target` volume — it builds into its own `backend-target-bg` volume
+(via `CARGO_TARGET_DIR`) so a host-triggered `just build`/`just test` never
+blocks on cargo's target-directory lock while `cargo watch` is running.
 
 Rust deps are pre-compiled via cargo-chef and baked into the dev image.
 After a source change, only your code recompiles. After a `Cargo.toml`

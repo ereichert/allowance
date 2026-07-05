@@ -35,7 +35,7 @@ Run the bootstrap script once. It installs Homebrew, Colima, Docker, and `just` 
 
 ```sh
 cp .env.containers.sample .env.containers   # optional: override defaults
-just build-image                            # build dev Docker image (~5-10 min first time)
+just build-image                            # build all container images (~5-10 min first time)
 just up                                     # start containers
 just build                                  # compile backend and frontend
 ```

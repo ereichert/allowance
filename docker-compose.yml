@@ -32,12 +32,21 @@ services:
       dockerfile: docker/Dockerfile.dev
     volumes:
       - .:/app
-      - backend-target:/app/backend/target
+      # Separate target dir from `dev` (see CARGO_TARGET_DIR below): cargo
+      # serializes writes to a target directory, so sharing one with `dev`
+      # would make host-triggered `just build`/`just test` block silently
+      # while cargo watch here is mid-recompile.
+      # Must stay listed in .gitignore under its own name (target-bg) —
+      # cargo watch treats any untracked path as source, so an unignored
+      # target dir makes it see its own build output as a change and
+      # restart mid-compile forever.
+      - backend-target-bg:/app/backend/target-bg
       - cargo-registry:/usr/local/cargo/registry
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgres://allowance:allowance@postgres:5432/allowance}
       LISTEN_ADDR: ${LISTEN_ADDR:-0.0.0.0:3000}
       RUST_LOG: ${RUST_LOG:-info}
+      CARGO_TARGET_DIR: /app/backend/target-bg
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     command: bash -c "cd /app/backend && cargo watch --poll -x run"
@@ -60,7 +69,9 @@ services:
       VITE_ALLOWANCE_API_URL: ${VITE_ALLOWANCE_API_URL:-http://localhost:3000}
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
-    command: bash -c "cd /app/frontend && npm install && npm run dev -- --host"
+    # npm ci (not install): fails on a stale lockfile instead of rewriting it,
+    # since this runs unattended on every start and restart.
+    command: bash -c "cd /app/frontend && npm ci && npm run dev -- --host"
     restart: unless-stopped
     working_dir: /app
 
@@ -82,6 +93,7 @@ services:
 
 volumes:
   backend-target:
+  backend-target-bg:
   frontend-node-modules:
   postgres-data:
   cargo-registry:

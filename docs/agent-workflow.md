@@ -11,7 +11,7 @@ Nothing — the `bin/bootstrap` script installs everything (Homebrew, Colima, Do
 ```sh
 ./bin/bootstrap                               # installs brew, colima, docker, just; starts colima
 cp .env.containers.sample .env.containers     # optional: override defaults
-just build-image                              # build the dev Docker image (~5-10 min first time)
+just build-image                              # build all container images (~5-10 min first time)
 just up                                       # start containers
 just build                                    # compile backend and frontend
 ```
@@ -98,7 +98,7 @@ just shell            # open a bash shell in the dev container
 Rebuild only when `Cargo.toml`, `Cargo.lock`, or `docker/Dockerfile.dev` change:
 
 ```sh
-just rebuild        # rebuild dev image and restart containers
+just rebuild        # rebuild all container images and restart containers
 ```
 
 For all other changes (source code edits, frontend files), cargo-watch and
