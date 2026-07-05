@@ -47,11 +47,11 @@ up:
 down:
     {{_compose}} down
 
-# Build the dev image
+# Build all container images (dev, backend, frontend)
 build-image:
-    {{_compose}} build dev
+    {{_compose}} build
 
-# Rebuild the dev image (re-bakes Rust deps) then restart containers
+# Rebuild all container images (re-bakes Rust deps) then restart containers
 rebuild: build-image up
 
 # Show container status
@@ -73,7 +73,8 @@ nuke:
     echo ""
     echo "  This will stop all containers and DELETE all Docker volumes:"
     echo "    - postgres-data         (your database will be erased)"
-    echo "    - backend-target        (compiled Rust artifacts)"
+    echo "    - backend-target        (compiled Rust artifacts, dev container)"
+    echo "    - backend-target-bg     (compiled Rust artifacts, backend container)"
     echo "    - frontend-node-modules"
     echo "    - cargo-registry"
     echo ""
@@ -102,27 +103,6 @@ build: _check-dev
         cd ../frontend && npm install && npm run build
     else
         {{_compose}} exec dev just build
-    fi
-
-# Start backend with auto-reload on source changes
-dev-backend: _check-dev
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if [ -n "{{in_container}}" ]; then
-        cd backend && cargo watch --poll -x run
-    else
-        {{_compose}} exec dev just dev-backend
-    fi
-
-# Start Vite dev server
-# --host binds to 0.0.0.0 so port 5173 is reachable from outside the container
-dev-frontend: _check-dev
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if [ -n "{{in_container}}" ]; then
-        cd frontend && npm install && npm run dev -- --host
-    else
-        {{_compose}} exec dev just dev-frontend
     fi
 
 # Open a bash shell in the dev container

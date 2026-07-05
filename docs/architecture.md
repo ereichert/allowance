@@ -92,35 +92,34 @@ middleware at the `api` layer without affecting lower layers.
 The project uses Docker Compose for a reproducible development environment.
 Container engine: Colima (macOS) or any Docker-compatible runtime.
 
-Two containers:
+Four containers (`just up` starts all of them):
 
-- `dev` — Rust toolchain, Node.js, dev tools (cargo-watch, sqlx-cli, just), source bind-mounted from the host
+- `dev` — Rust toolchain, Node.js, dev tools (cargo-watch, sqlx-cli, just), source bind-mounted from the host; used for `just build`, `just test`, `just shell`, etc.
+- `backend` — runs `cargo watch --poll -x run`; auto-restarts on crash; forwards port 3000
+- `frontend` — runs `npm run dev -- --host`; auto-restarts on crash; forwards port 5173
 - `postgres` — PostgreSQL 17
 
 ```text
-┌─────────────────────────────────────────┐
-│              dev container              │
-│  ┌─────────────────┐  ┌─────────────┐  │
-│  │  backend (axum) │  │  agent /    │  │
-│  │  port 3000      │  │  human dev  │  │
-│  └─────────────────┘  └─────────────┘  │
-│  ┌─────────────────┐                   │
-│  │ frontend (vite) │                   │
-│  │ port 5173       │                   │
-│  └─────────────────┘                   │
-└───────────────────┬─────────────────────┘
-                    │
-┌───────────────────▼─────────────────────┐
-│           postgres container            │
-│           port 5432                     │
-└─────────────────────────────────────────┘
-         ↕ ports forwarded to host
-  localhost:3000 / :5173 / :5432
+┌─────────────────┐  ┌──────────────────┐  ┌─────────────────┐
+│  dev container  │  │backend container │  │frontend container│
+│  (tools/shell)  │  │  cargo watch     │  │   vite dev      │
+│                 │  │  port 3000       │  │   port 5173     │
+└─────────────────┘  └────────┬─────────┘  └────────┬────────┘
+                               │                     │
+┌──────────────────────────────▼─────────────────────▼────────┐
+│                      postgres container                       │
+│                      port 5432                                │
+└───────────────────────────────────────────────────────────────┘
+                  ↕ ports forwarded to host
+           localhost:3000 / :5173 / :5432
 ```
 
-Source code is bind-mounted from the host. `backend/target/` and
-`frontend/node_modules/` use named Docker volumes to isolate Linux
-binaries from the macOS host filesystem.
+Source code is bind-mounted from the host into all containers. `backend/target/`
+and `frontend/node_modules/` use named Docker volumes to isolate Linux binaries
+from the macOS host filesystem. The `backend` container does not share `dev`'s
+`backend-target` volume — it builds into its own `backend-target-bg` volume
+(via `CARGO_TARGET_DIR`) so a host-triggered `just build`/`just test` never
+blocks on cargo's target-directory lock while `cargo watch` is running.
 
 Rust deps are pre-compiled via cargo-chef and baked into the dev image.
 After a source change, only your code recompiles. After a `Cargo.toml`

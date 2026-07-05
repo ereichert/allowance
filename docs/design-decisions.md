@@ -16,7 +16,9 @@ Colima is open-source, free, and runs Docker-compatible containers via a lightwe
 
 **Decision:** The `dev` container runs `sleep infinity` as its default command and stays alive indefinitely. Dev tasks run via `docker compose exec`.
 
-The alternative — starting a new container per command — would lose compiled artifacts and environment state between invocations. With `sleep infinity`, the container is a persistent workspace: cargo-watch and Vite stay running, the filesystem is warm, and `just` commands exec into it transparently from the host. Container lifecycle is explicit (`just up` / `just down`), not implicit.
+The alternative — starting a new container per command — would lose compiled artifacts and environment state between invocations. With `sleep infinity`, the container is a persistent workspace: the cargo registry and node_modules volumes are warm, and `just` commands exec into it transparently from the host. Container lifecycle is explicit (`just up` / `just down`), not implicit.
+
+The backend and frontend dev servers run in their own dedicated Compose services (`backend`, `frontend`) with `restart: unless-stopped`, leaving the `dev` container solely for tool invocations (build, test, lint, fmt, migrations).
 
 ---
 
@@ -67,9 +69,19 @@ Without this guard, a missing container produces a confusing Docker error ("cont
 
 ## `npm install` in Dev Task Recipes
 
-**Decision:** `just build`, `just dev-frontend`, `just lint`, and `just fmt` each run `npm install` before their primary command.
+**Decision:** `just build`, `just lint`, and `just fmt` each run `npm install` before their primary command.
 
 The `frontend/node_modules` volume starts empty on first run and after `just nuke`. If `npm install` is not part of the recipe, the first invocation of any frontend task fails with `tsc: not found` or similar. Running `npm install` is idempotent — it is a no-op when the lockfile is satisfied — so embedding it adds negligible overhead while ensuring the task always works.
+
+The `frontend` Compose service's startup command uses `npm ci` instead, not `npm install`. `npm ci` fails on a stale lockfile rather than rewriting it. That matters for the service specifically because it runs unattended on every container start and every crash-triggered `restart: unless-stopped` — there is no human present to notice or commit a lockfile drift. The `just` recipes run under an operator's eye, so a self-correcting `npm install` is safe there.
+
+---
+
+## Separate Cargo Target Directory for the `backend` Service
+
+**Decision:** The `backend` service does not share the `dev` container's `backend-target` volume. It sets `CARGO_TARGET_DIR=/app/backend/target-bg`, backed by its own `backend-target-bg` volume.
+
+Cargo serializes writes to a target directory with a file lock. `backend` runs `cargo watch` continuously; if it shared `backend-target` with `dev`, a host-triggered `just build` or `just test` would block silently on that lock whenever `cargo watch` was mid-recompile, with no output or timeout to explain why. The two containers never need each other's build artifacts, so giving `backend` its own target directory removes the contention entirely.
 
 ---
 
