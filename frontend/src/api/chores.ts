@@ -1,6 +1,6 @@
 /// API calls for chores and people.
 
-import type { Chore, CreateChoreRequest } from '../types/chore'
+import type { Chore, ChoresListResponse, CreateChoreRequest } from '../types/chore'
 import type { Person } from '../types/person'
 import { api } from './client'
 
@@ -12,6 +12,6 @@ export const createChore = (input: CreateChoreRequest): Promise<Chore> =>
 export const listPeople = (): Promise<Person[]> =>
   api.get<{ items: Person[] }>('/people').then((r) => r.items)
 
-/** List all chores. Requests the max page size so the full list fits on one page. */
-export const listChores = (): Promise<Chore[]> =>
-  api.get<{ items: Chore[] }>('/chores?per_page=100').then((r) => r.items)
+/** List chores for a given page. Defaults to the first page at the max page size. */
+export const listChores = (page = 1, perPage = 100): Promise<ChoresListResponse> =>
+  api.get<ChoresListResponse>(`/chores?page=${page}&per_page=${perPage}`)

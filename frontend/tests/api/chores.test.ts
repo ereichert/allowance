@@ -90,15 +90,16 @@ describe('listChores', () => {
     },
   ]
 
-  it('returns the items array from the paginated response', async () => {
-    mockFetch({ items: stubChores, total: 2, page: 1, per_page: 100 })
+  it('returns the full paginated response', async () => {
+    const response = { items: stubChores, total: 2, page: 1, per_page: 100 }
+    mockFetch(response)
 
     const result = await listChores()
 
-    expect(result).toEqual(stubChores)
+    expect(result).toEqual(response)
   })
 
-  it('requests the max page size so all chores are returned in one page', async () => {
+  it('defaults to page 1 with the max page size', async () => {
     const fetchSpy = vi.fn().mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -108,17 +109,35 @@ describe('listChores', () => {
 
     await listChores()
 
+    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('page=1'), expect.anything())
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining('per_page=100'),
       expect.anything(),
     )
   })
 
-  it('returns an empty array when items is empty', async () => {
+  it('requests the given page and page size', async () => {
+    const fetchSpy = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ items: [], total: 0, page: 2, per_page: 50 }),
+    })
+    vi.stubGlobal('fetch', fetchSpy)
+
+    await listChores(2, 50)
+
+    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('page=2'), expect.anything())
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('per_page=50'),
+      expect.anything(),
+    )
+  })
+
+  it('returns an empty items array when there are no chores', async () => {
     mockFetch({ items: [], total: 0, page: 1, per_page: 100 })
 
     const result = await listChores()
 
-    expect(result).toEqual([])
+    expect(result.items).toEqual([])
   })
 })

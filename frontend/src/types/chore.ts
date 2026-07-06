@@ -15,3 +15,11 @@ export interface CreateChoreRequest {
   due_at?: string
   assignee_ids?: string[]
 }
+
+/** Paginated envelope returned by GET /chores. */
+export interface ChoresListResponse {
+  items: Chore[]
+  total: number
+  page: number
+  per_page: number
+}
