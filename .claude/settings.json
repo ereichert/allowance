@@ -23,7 +23,10 @@
       "Bash(colima *)",
       "Bash(just *)",
       "Bash(git *)",
-      "Bash(gh *)"
+      "Bash(gh *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)"
     ],
     "additionalDirectories": [
       "/Users/ereichert/dev/allowance/.claude",
