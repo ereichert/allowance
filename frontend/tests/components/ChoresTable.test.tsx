@@ -33,15 +33,7 @@ describe('ChoresTable', () => {
 
   it('renders a column header for each chore property', () => {
     render(<ChoresTable chores={stubChores} />)
-    for (const name of [
-      'ID',
-      'Description',
-      'Value',
-      'Recurrence',
-      'Active',
-      'Created At',
-      'Updated At',
-    ]) {
+    for (const name of ['Description', 'Value', 'Recurrence', 'Active']) {
       expect(screen.getByRole('columnheader', { name })).toBeInTheDocument()
     }
   })
@@ -71,5 +63,13 @@ describe('ChoresTable', () => {
   it('shows an empty-state message when there are no chores', () => {
     render(<ChoresTable chores={[]} />)
     expect(screen.getByText(/no chores/i)).toBeInTheDocument()
+  })
+
+  it('does not expose the ID, Created At, or Updated At columns', () => {
+    render(<ChoresTable chores={stubChores} />)
+    for (const name of ['ID', 'Created At', 'Updated At']) {
+      expect(screen.queryByRole('columnheader', { name })).not.toBeInTheDocument()
+    }
+    expect(screen.queryByText('c1')).not.toBeInTheDocument()
   })
 })
