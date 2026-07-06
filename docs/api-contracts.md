@@ -112,6 +112,42 @@ for each person with status `Pending`.
 
 ---
 
+### GET /api/v1/chores
+
+Returns a paginated list of all chores, active and inactive. Supports
+optional partial description search.
+
+#### Query parameters
+
+| Parameter     | Type    | Default | Max | Description                                 |
+|---------------|---------|---------|-----|---------------------------------------------|
+| `page`        | integer | 1       | —   | Page number (1-indexed)                     |
+| `per_page`    | integer | 20      | 100 | Results per page                            |
+| `description` | string  | —       | —   | Case-insensitive partial description filter |
+
+#### Response `200 OK`
+
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "description": "Take out trash",
+      "value_cents": 100,
+      "recurrence_cron": null,
+      "is_active": true,
+      "created_at": "2026-04-02T12:00:00Z",
+      "updated_at": "2026-04-02T12:00:00Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "per_page": 20
+}
+```
+
+---
+
 ### GET /api/v1/people
 
 Returns a paginated list of people (used to populate the assignee multi-select).

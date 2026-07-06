@@ -1,15 +1,29 @@
 //! Route modules for the Allowance API.
 
 pub mod chores;
+pub mod chores_query;
 pub mod people;
 
 use allowance_service::ServiceError;
-use axum::{http::StatusCode, response::{IntoResponse, Response}, Json};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 struct ErrorBody {
     error: String,
+}
+
+/// Shared envelope for paginated list responses.
+#[derive(Debug, Serialize)]
+pub struct PaginatedResponse<T: Serialize> {
+    pub items: Vec<T>,
+    pub total: i64,
+    pub page: i64,
+    pub per_page: i64,
 }
 
 /// Newtype wrapper so `ServiceError` can implement `IntoResponse`
@@ -32,7 +46,10 @@ impl IntoResponse for ApiError {
             ),
             ServiceError::Repo(e) => {
                 tracing::error!(error = %e, "database error in handler");
-                (StatusCode::INTERNAL_SERVER_ERROR, "internal server error".to_string())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal server error".to_string(),
+                )
             }
         };
         (status, Json(ErrorBody { error: message })).into_response()

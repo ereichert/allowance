@@ -1,64 +1,55 @@
-//! Handlers for people-related API endpoints.
+//! Handler for listing chores.
 
-use super::{ApiError, PaginatedResponse};
-use allowance_domain::Role;
-use allowance_service::person::{list_people, ListPeopleQuery};
+use super::chores::{recurrence_to_cron, ChoreResponse};
+use super::ApiError;
+use super::PaginatedResponse;
+use allowance_service::chore_query::{list_chores, ListChoresQuery};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use sqlx::PgPool;
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
-pub struct PeopleQueryParams {
+pub struct ChoreQueryParams {
     pub page: Option<i64>,
     pub per_page: Option<i64>,
-    pub name: Option<String>,
+    pub description: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
-pub struct PersonResponse {
-    pub id: Uuid,
-    pub name: String,
-    pub role: String,
-    pub created_at: DateTime<Utc>,
-}
-
-/// `GET /api/v1/people` — list people with optional name search and pagination.
-pub async fn get_people(
+/// `GET /api/v1/chores` — list all chores with optional description search and pagination.
+pub async fn get_chores(
     State(pool): State<PgPool>,
-    Query(params): Query<PeopleQueryParams>,
+    Query(params): Query<ChoreQueryParams>,
 ) -> Result<impl IntoResponse, ApiError> {
     let page = params.page.unwrap_or(1);
     let per_page = params.per_page.unwrap_or(20);
 
-    let result = list_people(
+    let result = list_chores(
         &pool,
-        ListPeopleQuery {
+        ListChoresQuery {
             page,
             per_page,
-            name: params.name,
+            description: params.description,
         },
     )
     .await
     .map_err(ApiError::from)?;
 
-    let items: Vec<PersonResponse> = result
-        .people
+    let items: Vec<ChoreResponse> = result
+        .chores
         .into_iter()
-        .map(|p| PersonResponse {
-            id: p.id.0,
-            name: p.name,
-            role: match p.role {
-                Role::Admin => "Admin".to_string(),
-                Role::Child => "Child".to_string(),
-            },
-            created_at: p.created_at,
+        .map(|c| ChoreResponse {
+            id: c.id.0,
+            description: c.description,
+            value_cents: c.value_cents,
+            recurrence_cron: c.recurrence.as_ref().map(recurrence_to_cron),
+            is_active: c.is_active,
+            created_at: c.created_at,
+            updated_at: c.updated_at,
         })
         .collect();
 
@@ -88,11 +79,11 @@ mod tests {
 
     fn app(pool: PgPool) -> Router {
         Router::new()
-            .route("/api/v1/people", get(get_people))
+            .route("/api/v1/chores", get(get_chores))
             .with_state(pool)
     }
 
-    async fn get_json(app: Router, path: &str) -> (axum::http::StatusCode, Value) {
+    async fn get_json(app: Router, path: &str) -> (StatusCode, Value) {
         let response = app
             .oneshot(
                 Request::builder()
@@ -112,14 +103,14 @@ mod tests {
         (status, json)
     }
 
-    use allowance_test_helpers::seed_person;
+    use allowance_test_helpers::seed_chore;
 
     #[sqlx::test(migrations = "../../migrations")]
-    async fn get_people_returns_paginated_response(pool: PgPool) {
-        seed_person(&pool, "Alice").await;
-        seed_person(&pool, "Bob").await;
+    async fn get_chores_returns_paginated_response(pool: PgPool) {
+        seed_chore(&pool, "Sweep porch", 100).await;
+        seed_chore(&pool, "Wash dishes", 150).await;
 
-        let (status, body) = get_json(app(pool), "/api/v1/people").await;
+        let (status, body) = get_json(app(pool), "/api/v1/chores").await;
 
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["total"], json!(2));
@@ -129,34 +120,34 @@ mod tests {
     }
 
     #[sqlx::test(migrations = "../../migrations")]
-    async fn get_people_returns_empty_items_when_no_people(pool: PgPool) {
-        let (status, body) = get_json(app(pool), "/api/v1/people").await;
+    async fn get_chores_returns_empty_items_when_no_chores(pool: PgPool) {
+        let (status, body) = get_json(app(pool), "/api/v1/chores").await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["total"], json!(0));
         assert_eq!(body["items"].as_array().unwrap().len(), 0);
     }
 
     #[sqlx::test(migrations = "../../migrations")]
-    async fn get_people_filters_by_name(pool: PgPool) {
-        seed_person(&pool, "Alice").await;
-        seed_person(&pool, "Bob").await;
+    async fn get_chores_filters_by_description(pool: PgPool) {
+        seed_chore(&pool, "Take out trash", 100).await;
+        seed_chore(&pool, "Wash dishes", 150).await;
 
-        let (status, body) = get_json(app(pool), "/api/v1/people?name=ali").await;
+        let (status, body) = get_json(app(pool), "/api/v1/chores?description=trash").await;
 
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["total"], json!(1));
         let items = body["items"].as_array().unwrap();
         assert_eq!(items.len(), 1);
-        assert_eq!(items[0]["name"], json!("Alice"));
+        assert_eq!(items[0]["description"], json!("Take out trash"));
     }
 
     #[sqlx::test(migrations = "../../migrations")]
-    async fn get_people_paginates_results(pool: PgPool) {
-        seed_person(&pool, "Alice").await;
-        seed_person(&pool, "Bob").await;
-        seed_person(&pool, "Carol").await;
+    async fn get_chores_paginates_results(pool: PgPool) {
+        seed_chore(&pool, "First", 100).await;
+        seed_chore(&pool, "Second", 150).await;
+        seed_chore(&pool, "Third", 200).await;
 
-        let (status, body) = get_json(app(pool), "/api/v1/people?page=2&per_page=2").await;
+        let (status, body) = get_json(app(pool), "/api/v1/chores?page=2&per_page=2").await;
 
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["total"], json!(3));
@@ -164,6 +155,5 @@ mod tests {
         assert_eq!(body["per_page"], json!(2));
         let items = body["items"].as_array().unwrap();
         assert_eq!(items.len(), 1);
-        assert_eq!(items[0]["name"], json!("Carol"));
     }
 }

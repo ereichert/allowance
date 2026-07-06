@@ -2,7 +2,7 @@ export interface Chore {
   id: string
   description: string
   value_cents: number
-  recurrence: string | null
+  recurrence_cron: string | null
   is_active: boolean
   created_at: string
   updated_at: string
@@ -14,4 +14,12 @@ export interface CreateChoreRequest {
   value_cents?: number
   due_at?: string
   assignee_ids?: string[]
+}
+
+/** Paginated envelope returned by GET /chores. */
+export interface ChoresListResponse {
+  items: Chore[]
+  total: number
+  page: number
+  per_page: number
 }
