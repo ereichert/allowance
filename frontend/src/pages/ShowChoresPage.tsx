@@ -17,19 +17,17 @@ export function ShowChoresPage() {
       ) : (
         <>
           <ChoresTable chores={chores} />
-          {totalPages > 1 && (
-            <div className="show-chores-page__pagination">
-              <button type="button" onClick={goToPreviousPage} disabled={page <= 1}>
-                Previous
-              </button>
-              <span>
-                Page {page} of {totalPages}
-              </span>
-              <button type="button" onClick={goToNextPage} disabled={page >= totalPages}>
-                Next
-              </button>
-            </div>
-          )}
+          <div className="show-chores-page__pagination">
+            <button type="button" onClick={goToPreviousPage} disabled={page <= 1}>
+              Previous
+            </button>
+            <span>
+              Page {page} of {totalPages}
+            </span>
+            <button type="button" onClick={goToNextPage} disabled={page >= totalPages}>
+              Next
+            </button>
+          </div>
         </>
       )}
     </div>

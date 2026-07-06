@@ -58,18 +58,18 @@ describe('ShowChoresPage', () => {
     expect(screen.getByText('Failed to load chores')).toBeInTheDocument()
   })
 
-  it('does not render pagination controls when there is only one page', () => {
+  it('renders pagination controls even when there is only one page', () => {
     mockUseChores.mockReturnValue(makeChoresHook({ totalPages: 1 }))
-    render(<ShowChoresPage />)
-    expect(screen.queryByRole('button', { name: /next/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /previous/i })).not.toBeInTheDocument()
-  })
-
-  it('renders pagination controls when there is more than one page', () => {
-    mockUseChores.mockReturnValue(makeChoresHook({ totalPages: 3 }))
     render(<ShowChoresPage />)
     expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /previous/i })).toBeInTheDocument()
+  })
+
+  it('disables both Previous and Next when there is only one page', () => {
+    mockUseChores.mockReturnValue(makeChoresHook({ page: 1, totalPages: 1 }))
+    render(<ShowChoresPage />)
+    expect(screen.getByRole('button', { name: /previous/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled()
   })
 
   it('shows the current page and total pages', () => {
