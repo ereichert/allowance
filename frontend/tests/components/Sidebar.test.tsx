@@ -1,62 +1,69 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { describe, it, expect } from 'vitest'
 import { Sidebar } from '../../src/components/Sidebar'
 
+function renderSidebar(initialPath: string) {
+  return render(
+    <MemoryRouter initialEntries={[initialPath]}>
+      <Sidebar />
+      <Routes>
+        <Route path="/add-chore" element={<div data-testid="add-chore-page" />} />
+        <Route path="/chores" element={<div data-testid="show-chores-page" />} />
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
 describe('Sidebar', () => {
-  let onNavigate: ReturnType<typeof vi.fn>
-
-  beforeEach(() => {
-    onNavigate = vi.fn()
-  })
-
   it('renders a navigation landmark', () => {
-    render(<Sidebar onNavigate={onNavigate} />)
+    renderSidebar('/add-chore')
     expect(screen.getByRole('navigation')).toBeInTheDocument()
   })
 
   it('renders the app name', () => {
-    render(<Sidebar onNavigate={onNavigate} />)
+    renderSidebar('/add-chore')
     expect(screen.getByText('Allowance')).toBeInTheDocument()
   })
 
   it('renders an Add Chore nav item', () => {
-    render(<Sidebar onNavigate={onNavigate} />)
+    renderSidebar('/add-chore')
     expect(screen.getByRole('link', { name: /add chore/i })).toBeInTheDocument()
   })
 
-  it('marks the Add Chore link as current when activeItem is add-chore', () => {
-    render(<Sidebar activeItem="add-chore" onNavigate={onNavigate} />)
+  it('marks the Add Chore link as current when browsing /add-chore', () => {
+    renderSidebar('/add-chore')
     expect(screen.getByRole('link', { name: /add chore/i })).toHaveAttribute(
       'aria-current',
       'page',
     )
   })
 
-  it('does not mark any link as current when no activeItem is set', () => {
-    render(<Sidebar onNavigate={onNavigate} />)
+  it('does not mark the Add Chore link as current when browsing /chores', () => {
+    renderSidebar('/chores')
     expect(screen.getByRole('link', { name: /add chore/i })).not.toHaveAttribute('aria-current')
   })
 
   it('renders a Chores nav item', () => {
-    render(<Sidebar onNavigate={onNavigate} />)
+    renderSidebar('/add-chore')
     expect(screen.getByRole('link', { name: /chores/i })).toBeInTheDocument()
   })
 
-  it('marks the Chores link as current when activeItem is show-chores', () => {
-    render(<Sidebar activeItem="show-chores" onNavigate={onNavigate} />)
+  it('marks the Chores link as current when browsing /chores', () => {
+    renderSidebar('/chores')
     expect(screen.getByRole('link', { name: /chores/i })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('calls onNavigate with add-chore when the Add Chore link is clicked', async () => {
-    render(<Sidebar onNavigate={onNavigate} />)
+  it('navigates to the Add Chore page when its link is clicked', async () => {
+    renderSidebar('/chores')
     await userEvent.click(screen.getByRole('link', { name: /add chore/i }))
-    expect(onNavigate).toHaveBeenCalledWith('add-chore')
+    expect(screen.getByTestId('add-chore-page')).toBeInTheDocument()
   })
 
-  it('calls onNavigate with show-chores when the Chores link is clicked', async () => {
-    render(<Sidebar onNavigate={onNavigate} />)
+  it('navigates to the Chores page when its link is clicked', async () => {
+    renderSidebar('/add-chore')
     await userEvent.click(screen.getByRole('link', { name: /chores/i }))
-    expect(onNavigate).toHaveBeenCalledWith('show-chores')
+    expect(screen.getByTestId('show-chores-page')).toBeInTheDocument()
   })
 })

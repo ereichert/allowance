@@ -1,16 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import App from '../src/App'
-
-vi.mock('../src/components/Sidebar', () => ({
-  Sidebar: ({ onNavigate }: { onNavigate: (item: 'add-chore' | 'show-chores') => void }) => (
-    <div data-testid="sidebar">
-      <button onClick={() => onNavigate('add-chore')}>Add Chore</button>
-      <button onClick={() => onNavigate('show-chores')}>Chores</button>
-    </div>
-  ),
-}))
 
 vi.mock('../src/pages/AddChorePage', () => ({
   AddChorePage: () => <div data-testid="add-chore-page" />,
@@ -20,49 +12,74 @@ vi.mock('../src/pages/ShowChoresPage', () => ({
   ShowChoresPage: () => <div data-testid="show-chores-page" />,
 }))
 
+function renderApp(initialPath: string) {
+  return render(
+    <MemoryRouter initialEntries={[initialPath]}>
+      <App />
+    </MemoryRouter>,
+  )
+}
+
 describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('renders a header', () => {
-    render(<App />)
+    renderApp('/add-chore')
     expect(screen.getByRole('banner')).toBeInTheDocument()
   })
 
   it('renders the page title in the header', () => {
-    render(<App />)
+    renderApp('/add-chore')
     expect(screen.getByRole('banner')).toHaveTextContent('Add Chore')
   })
 
   it('renders a footer', () => {
-    render(<App />)
+    renderApp('/add-chore')
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()
   })
 
   it('renders app name in the footer', () => {
-    render(<App />)
+    renderApp('/add-chore')
     expect(screen.getByRole('contentinfo')).toHaveTextContent(/allowance/i)
   })
 
   it('renders the sidebar', () => {
-    render(<App />)
-    expect(screen.getByTestId('sidebar')).toBeInTheDocument()
+    renderApp('/add-chore')
+    expect(screen.getByRole('navigation')).toBeInTheDocument()
   })
 
   it('renders the main content area', () => {
-    render(<App />)
+    renderApp('/add-chore')
     expect(screen.getByRole('main')).toBeInTheDocument()
   })
 
-  it('renders the Add Chore page by default', () => {
-    render(<App />)
+  it('renders the Add Chore page at /add-chore', () => {
+    renderApp('/add-chore')
     expect(screen.getByTestId('add-chore-page')).toBeInTheDocument()
   })
 
+  it('redirects / to the Add Chore page', () => {
+    renderApp('/')
+    expect(screen.getByTestId('add-chore-page')).toBeInTheDocument()
+  })
+
+  it('redirects an unknown path to the Add Chore page', () => {
+    renderApp('/some-unknown-path')
+    expect(screen.getByTestId('add-chore-page')).toBeInTheDocument()
+  })
+
+  it('renders the Chores page and header title at /chores', () => {
+    renderApp('/chores')
+    expect(screen.getByRole('banner')).toHaveTextContent('Chores')
+    expect(screen.getByTestId('show-chores-page')).toBeInTheDocument()
+    expect(screen.queryByTestId('add-chore-page')).not.toBeInTheDocument()
+  })
+
   it('switches to the Chores page and header title when navigated', async () => {
-    render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: /chores/i }))
+    renderApp('/add-chore')
+    await userEvent.click(screen.getByRole('link', { name: /chores/i }))
 
     expect(screen.getByRole('banner')).toHaveTextContent('Chores')
     expect(screen.getByTestId('show-chores-page')).toBeInTheDocument()
@@ -70,9 +87,8 @@ describe('App', () => {
   })
 
   it('switches back to the Add Chore page when navigated', async () => {
-    render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: /chores/i }))
-    await userEvent.click(screen.getByRole('button', { name: /add chore/i }))
+    renderApp('/chores')
+    await userEvent.click(screen.getByRole('link', { name: /add chore/i }))
 
     expect(screen.getByRole('banner')).toHaveTextContent('Add Chore')
     expect(screen.getByTestId('add-chore-page')).toBeInTheDocument()

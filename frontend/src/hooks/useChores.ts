@@ -1,4 +1,5 @@
-/// Hook for loading the list of chores (used by the Show Chores page).
+/// Hook for loading a page of chores (used by the Show Chores page). The
+/// current page is owned by the caller (synced to the URL), not this hook.
 
 import { useEffect, useState } from 'react'
 import { listChores } from '../api/chores'
@@ -10,19 +11,21 @@ export interface UseChoresReturn {
   chores: Chore[]
   loading: boolean
   error: string | null
-  page: number
   totalPages: number
-  goToNextPage: () => void
-  goToPreviousPage: () => void
 }
 
-/** Fetches a page of chores, refetching whenever the page changes. */
-export function useChores(): UseChoresReturn {
+/** Fetches a page of chores, refetching whenever `page` changes. */
+export function useChores(page: number): UseChoresReturn {
   const [chores, setChores] = useState<Chore[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [fetchedPage, setFetchedPage] = useState(page)
+
+  if (page !== fetchedPage) {
+    setFetchedPage(page)
+    setLoading(true)
+  }
 
   useEffect(() => {
     listChores(page, PER_PAGE)
@@ -42,13 +45,5 @@ export function useChores(): UseChoresReturn {
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
 
-  function goToNextPage() {
-    setPage((current) => Math.min(current + 1, totalPages))
-  }
-
-  function goToPreviousPage() {
-    setPage((current) => Math.max(current - 1, 1))
-  }
-
-  return { chores, loading, error, page, totalPages, goToNextPage, goToPreviousPage }
+  return { chores, loading, error, totalPages }
 }
