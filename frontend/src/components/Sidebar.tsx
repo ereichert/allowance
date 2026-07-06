@@ -52,7 +52,7 @@ export function Sidebar({ activeItem, onNavigate }: SidebarProps) {
               onClick={handleClick('show-chores')}
             >
               <ShowChoresIcon size={15} />
-              Show Chores
+              Chores
             </a>
           </li>
         </ul>

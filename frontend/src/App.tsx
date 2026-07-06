@@ -25,7 +25,7 @@ function App() {
             ) : (
               <>
                 <ShowChoresIcon size={20} />
-                Show Chores
+                Chores
               </>
             )}
           </h1>

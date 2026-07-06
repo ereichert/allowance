@@ -7,7 +7,7 @@ vi.mock('../src/components/Sidebar', () => ({
   Sidebar: ({ onNavigate }: { onNavigate: (item: 'add-chore' | 'show-chores') => void }) => (
     <div data-testid="sidebar">
       <button onClick={() => onNavigate('add-chore')}>Add Chore</button>
-      <button onClick={() => onNavigate('show-chores')}>Show Chores</button>
+      <button onClick={() => onNavigate('show-chores')}>Chores</button>
     </div>
   ),
 }))
@@ -60,18 +60,18 @@ describe('App', () => {
     expect(screen.getByTestId('add-chore-page')).toBeInTheDocument()
   })
 
-  it('switches to the Show Chores page and header title when navigated', async () => {
+  it('switches to the Chores page and header title when navigated', async () => {
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: /show chores/i }))
+    await userEvent.click(screen.getByRole('button', { name: /chores/i }))
 
-    expect(screen.getByRole('banner')).toHaveTextContent('Show Chores')
+    expect(screen.getByRole('banner')).toHaveTextContent('Chores')
     expect(screen.getByTestId('show-chores-page')).toBeInTheDocument()
     expect(screen.queryByTestId('add-chore-page')).not.toBeInTheDocument()
   })
 
   it('switches back to the Add Chore page when navigated', async () => {
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: /show chores/i }))
+    await userEvent.click(screen.getByRole('button', { name: /chores/i }))
     await userEvent.click(screen.getByRole('button', { name: /add chore/i }))
 
     expect(screen.getByRole('banner')).toHaveTextContent('Add Chore')

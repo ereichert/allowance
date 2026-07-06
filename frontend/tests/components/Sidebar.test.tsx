@@ -38,17 +38,14 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: /add chore/i })).not.toHaveAttribute('aria-current')
   })
 
-  it('renders a Show Chores nav item', () => {
+  it('renders a Chores nav item', () => {
     render(<Sidebar onNavigate={onNavigate} />)
-    expect(screen.getByRole('link', { name: /show chores/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /chores/i })).toBeInTheDocument()
   })
 
-  it('marks the Show Chores link as current when activeItem is show-chores', () => {
+  it('marks the Chores link as current when activeItem is show-chores', () => {
     render(<Sidebar activeItem="show-chores" onNavigate={onNavigate} />)
-    expect(screen.getByRole('link', { name: /show chores/i })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
+    expect(screen.getByRole('link', { name: /chores/i })).toHaveAttribute('aria-current', 'page')
   })
 
   it('calls onNavigate with add-chore when the Add Chore link is clicked', async () => {
@@ -57,9 +54,9 @@ describe('Sidebar', () => {
     expect(onNavigate).toHaveBeenCalledWith('add-chore')
   })
 
-  it('calls onNavigate with show-chores when the Show Chores link is clicked', async () => {
+  it('calls onNavigate with show-chores when the Chores link is clicked', async () => {
     render(<Sidebar onNavigate={onNavigate} />)
-    await userEvent.click(screen.getByRole('link', { name: /show chores/i }))
+    await userEvent.click(screen.getByRole('link', { name: /chores/i }))
     expect(onNavigate).toHaveBeenCalledWith('show-chores')
   })
 })
