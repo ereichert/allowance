@@ -58,6 +58,10 @@ rebuild: build-image up
 status:
     {{_compose}} ps
 
+# Restart one container in place (all, if omitted): just restart frontend
+restart service="":
+    {{_compose}} restart {{service}}
+
 # Tail container logs (optionally for one service: just logs dev)
 logs service="":
     {{_compose}} logs -f {{service}}
