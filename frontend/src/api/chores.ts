@@ -11,3 +11,7 @@ export const createChore = (input: CreateChoreRequest): Promise<Chore> =>
 /** List all people (for the assignee picker). */
 export const listPeople = (): Promise<Person[]> =>
   api.get<{ items: Person[] }>('/people').then((r) => r.items)
+
+/** List all chores. Requests the max page size so the full list fits on one page. */
+export const listChores = (): Promise<Chore[]> =>
+  api.get<{ items: Chore[] }>('/chores?per_page=100').then((r) => r.items)

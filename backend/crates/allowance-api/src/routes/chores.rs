@@ -1,23 +1,17 @@
 //! Handlers for chore-related API endpoints.
 
 use super::ApiError;
-use allowance_service::chore::{create_chore, NewChore};
 use allowance_domain::Recurrence;
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use allowance_service::chore::{create_chore, NewChore};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-
 /// Serialize a `Recurrence` variant to its canonical cron string for API responses.
 /// Must stay in sync with the constants in `allowance-repo`.
-fn recurrence_to_cron(r: &Recurrence) -> String {
+pub(crate) fn recurrence_to_cron(r: &Recurrence) -> String {
     match r {
         Recurrence::Daily => "@daily".to_string(),
         Recurrence::Weekly => "@weekly".to_string(),
@@ -26,7 +20,6 @@ fn recurrence_to_cron(r: &Recurrence) -> String {
         Recurrence::Custom(expr) => expr.clone(),
     }
 }
-
 
 #[derive(Debug, Deserialize)]
 pub struct CreateChoreRequest {
@@ -47,7 +40,6 @@ pub struct ChoreResponse {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
-
 
 /// `POST /api/v1/chores` — create a single-occurrence chore.
 pub async fn post_chore(
@@ -73,7 +65,6 @@ pub async fn post_chore(
     Ok((StatusCode::CREATED, Json(response)))
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -95,7 +86,7 @@ mod tests {
 
     use allowance_test_helpers::seed_person;
 
-async fn post_json(app: Router, path: &str, body: Value) -> (StatusCode, Value) {
+    async fn post_json(app: Router, path: &str, body: Value) -> (StatusCode, Value) {
         let response = app
             .oneshot(
                 Request::builder()

@@ -5,7 +5,11 @@
 
 pub mod routes;
 
-use axum::{http::{header, HeaderValue, Method}, routing::get, Router};
+use axum::{
+    http::{header, HeaderValue, Method},
+    routing::get,
+    Router,
+};
 use sqlx::PgPool;
 use tower_http::cors::CorsLayer;
 
@@ -33,7 +37,10 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            response.headers().get("access-control-allow-origin").unwrap(),
+            response
+                .headers()
+                .get("access-control-allow-origin")
+                .unwrap(),
             "http://localhost:5173",
         );
     }
@@ -66,13 +73,20 @@ mod tests {
 /// Build and return the application router, wired to the given database pool.
 pub fn build_router(pool: PgPool, cors_origin: &str) -> Router {
     let cors = CorsLayer::new()
-        .allow_origin(cors_origin.parse::<HeaderValue>().expect("invalid CORS origin"))
+        .allow_origin(
+            cors_origin
+                .parse::<HeaderValue>()
+                .expect("invalid CORS origin"),
+        )
         .allow_methods([Method::GET, Method::POST])
         .allow_headers([header::CONTENT_TYPE]);
 
     Router::new()
         .route("/health", get(|| async { "ok" }))
-        .route("/api/v1/chores", axum::routing::post(routes::chores::post_chore))
+        .route(
+            "/api/v1/chores",
+            get(routes::chores_query::get_chores).post(routes::chores::post_chore),
+        )
         .route("/api/v1/people", get(routes::people::get_people))
         .with_state(pool)
         .layer(cors)

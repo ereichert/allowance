@@ -1,0 +1,37 @@
+.chores-table__scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.chores-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-white);
+  font-size: 0.9rem;
+}
+
+.chores-table th,
+.chores-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.chores-table th {
+  background: var(--color-navy);
+  color: var(--color-white);
+  font-weight: 500;
+}
+
+.chores-table__id {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-body-text);
+}
+
+.chores-table__empty {
+  text-align: center;
+  color: var(--color-body-text);
+  padding: 24px 12px;
+}

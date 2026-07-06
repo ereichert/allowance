@@ -6,9 +6,7 @@ use uuid::Uuid;
 /// Insert a person with the given name and role, returning their ID.
 /// Uses a dynamic query to avoid compile-time issues binding custom PG enum types.
 pub async fn insert_person(pool: &PgPool, name: &str, role: &str) -> Uuid {
-    let sql = format!(
-        "INSERT INTO people (name, role) VALUES ($1, '{role}'::role) RETURNING id"
-    );
+    let sql = format!("INSERT INTO people (name, role) VALUES ($1, '{role}'::role) RETURNING id");
     sqlx::query_scalar::<_, Uuid>(&sql)
         .bind(name)
         .fetch_one(pool)
@@ -19,4 +17,16 @@ pub async fn insert_person(pool: &PgPool, name: &str, role: &str) -> Uuid {
 /// Insert a person with the `Child` role, returning their ID.
 pub async fn seed_person(pool: &PgPool, name: &str) -> Uuid {
     insert_person(pool, name, "Child").await
+}
+
+/// Insert a chore with the given description and value, returning its ID.
+pub async fn seed_chore(pool: &PgPool, description: &str, value_cents: i64) -> Uuid {
+    sqlx::query_scalar::<_, Uuid>(
+        "INSERT INTO chores (description, value_cents) VALUES ($1, $2) RETURNING id",
+    )
+    .bind(description)
+    .bind(value_cents)
+    .fetch_one(pool)
+    .await
+    .unwrap()
 }

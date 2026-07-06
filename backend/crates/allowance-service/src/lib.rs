@@ -4,6 +4,7 @@
 //! It provides the high-level operations that the API layer calls into.
 
 pub mod chore;
+pub mod chore_query;
 pub mod error;
 pub mod person;
 

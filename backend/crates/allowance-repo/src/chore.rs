@@ -1,6 +1,9 @@
 //! Repository operations for chores and their assignments.
 
-use allowance_domain::{AssignmentId, AssignmentStatus, Chore, ChoreAssignment, ChoreId, NewChore, NewChoreAssignment, PersonId, Recurrence};
+use allowance_domain::{
+    AssignmentId, AssignmentStatus, Chore, ChoreAssignment, ChoreId, NewChore, NewChoreAssignment,
+    PersonId, Recurrence,
+};
 use chrono::{DateTime, Utc};
 use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
@@ -26,14 +29,14 @@ fn cron_to_recurrence(cron: &str) -> Recurrence {
     }
 }
 
-struct ChoreRow {
-    id: Uuid,
-    description: String,
-    value_cents: i64,
-    recurrence_cron: Option<String>,
-    is_active: bool,
-    created_at: DateTime<Utc>,
-    updated_at: DateTime<Utc>,
+pub(crate) struct ChoreRow {
+    pub(crate) id: Uuid,
+    pub(crate) description: String,
+    pub(crate) value_cents: i64,
+    pub(crate) recurrence_cron: Option<String>,
+    pub(crate) is_active: bool,
+    pub(crate) created_at: DateTime<Utc>,
+    pub(crate) updated_at: DateTime<Utc>,
 }
 
 impl From<ChoreRow> for Chore {
@@ -121,9 +124,16 @@ pub async fn insert_assignments_bulk_tx(
     }
 
     let chore_ids: Vec<Uuid> = new_chore_assignments.iter().map(|a| a.chore_id.0).collect();
-    let person_ids: Vec<Uuid> = new_chore_assignments.iter().map(|a| a.person_id.0).collect();
-    let assigned_bys: Vec<Option<Uuid>> = new_chore_assignments.iter().map(|a| a.assigned_by.map(|p| p.0)).collect();
-    let due_ats: Vec<Option<DateTime<Utc>>> = new_chore_assignments.iter().map(|a| a.due_at).collect();
+    let person_ids: Vec<Uuid> = new_chore_assignments
+        .iter()
+        .map(|a| a.person_id.0)
+        .collect();
+    let assigned_bys: Vec<Option<Uuid>> = new_chore_assignments
+        .iter()
+        .map(|a| a.assigned_by.map(|p| p.0))
+        .collect();
+    let due_ats: Vec<Option<DateTime<Utc>>> =
+        new_chore_assignments.iter().map(|a| a.due_at).collect();
 
     let rows = sqlx::query_as!(
         AssignmentRow,
@@ -178,24 +188,36 @@ mod tests {
 
     use allowance_test_helpers::seed_person;
 
-#[test]
+    #[test]
     fn daily_round_trips_through_cron() {
-        assert_eq!(cron_to_recurrence(&recurrence_to_cron(&Recurrence::Daily)), Recurrence::Daily);
+        assert_eq!(
+            cron_to_recurrence(&recurrence_to_cron(&Recurrence::Daily)),
+            Recurrence::Daily
+        );
     }
 
     #[test]
     fn weekly_round_trips_through_cron() {
-        assert_eq!(cron_to_recurrence(&recurrence_to_cron(&Recurrence::Weekly)), Recurrence::Weekly);
+        assert_eq!(
+            cron_to_recurrence(&recurrence_to_cron(&Recurrence::Weekly)),
+            Recurrence::Weekly
+        );
     }
 
     #[test]
     fn biweekly_round_trips_through_cron() {
-        assert_eq!(cron_to_recurrence(&recurrence_to_cron(&Recurrence::Biweekly)), Recurrence::Biweekly);
+        assert_eq!(
+            cron_to_recurrence(&recurrence_to_cron(&Recurrence::Biweekly)),
+            Recurrence::Biweekly
+        );
     }
 
     #[test]
     fn monthly_round_trips_through_cron() {
-        assert_eq!(cron_to_recurrence(&recurrence_to_cron(&Recurrence::Monthly)), Recurrence::Monthly);
+        assert_eq!(
+            cron_to_recurrence(&recurrence_to_cron(&Recurrence::Monthly)),
+            Recurrence::Monthly
+        );
     }
 
     #[test]
@@ -222,7 +244,9 @@ mod tests {
     #[sqlx::test(migrations = "../../migrations")]
     async fn insert_chore_tx_persists_description_and_value(pool: PgPool) {
         let mut tx = pool.begin().await.unwrap();
-        let chore = insert_chore_tx(&mut tx, &new_chore("Wash dishes", Some(150))).await.unwrap();
+        let chore = insert_chore_tx(&mut tx, &new_chore("Wash dishes", Some(150)))
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         assert_eq!(chore.description, "Wash dishes");
@@ -234,7 +258,9 @@ mod tests {
     #[sqlx::test(migrations = "../../migrations")]
     async fn insert_chore_tx_with_zero_value(pool: PgPool) {
         let mut tx = pool.begin().await.unwrap();
-        let chore = insert_chore_tx(&mut tx, &new_chore("Tidy room", Some(0))).await.unwrap();
+        let chore = insert_chore_tx(&mut tx, &new_chore("Tidy room", Some(0)))
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         assert_eq!(chore.value_cents, 0);
@@ -243,7 +269,9 @@ mod tests {
     #[sqlx::test(migrations = "../../migrations")]
     async fn insert_assignments_bulk_tx_creates_pending_records(pool: PgPool) {
         let mut tx = pool.begin().await.unwrap();
-        let chore = insert_chore_tx(&mut tx, &new_chore("Vacuum", Some(200))).await.unwrap();
+        let chore = insert_chore_tx(&mut tx, &new_chore("Vacuum", Some(200)))
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         let person_id = seed_person(&pool, "Alice").await;
@@ -255,7 +283,9 @@ mod tests {
             assigned_by: None,
             due_at: None,
         }];
-        let assignments = insert_assignments_bulk_tx(&mut tx, &new_assignments).await.unwrap();
+        let assignments = insert_assignments_bulk_tx(&mut tx, &new_assignments)
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         assert_eq!(assignments.len(), 1);
@@ -268,7 +298,9 @@ mod tests {
     #[sqlx::test(migrations = "../../migrations")]
     async fn insert_assignments_bulk_tx_stores_due_at(pool: PgPool) {
         let mut tx = pool.begin().await.unwrap();
-        let chore = insert_chore_tx(&mut tx, &new_chore("Mow lawn", Some(500))).await.unwrap();
+        let chore = insert_chore_tx(&mut tx, &new_chore("Mow lawn", Some(500)))
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         let person_id = seed_person(&pool, "Bob").await;
@@ -283,7 +315,9 @@ mod tests {
             assigned_by: None,
             due_at: Some(due),
         }];
-        let assignments = insert_assignments_bulk_tx(&mut tx, &new_assignments).await.unwrap();
+        let assignments = insert_assignments_bulk_tx(&mut tx, &new_assignments)
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         assert_eq!(assignments[0].due_at, Some(due));
@@ -292,7 +326,9 @@ mod tests {
     #[sqlx::test(migrations = "../../migrations")]
     async fn insert_assignments_bulk_tx_inserts_multiple_rows(pool: PgPool) {
         let mut tx = pool.begin().await.unwrap();
-        let chore = insert_chore_tx(&mut tx, &new_chore("Sweep", Some(100))).await.unwrap();
+        let chore = insert_chore_tx(&mut tx, &new_chore("Sweep", Some(100)))
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         let alice = seed_person(&pool, "Alice").await;
@@ -300,10 +336,22 @@ mod tests {
 
         let mut tx = pool.begin().await.unwrap();
         let new_assignments = vec![
-            NewChoreAssignment { chore_id: chore.id, person_id: PersonId(alice), assigned_by: None, due_at: None },
-            NewChoreAssignment { chore_id: chore.id, person_id: PersonId(bob), assigned_by: None, due_at: None },
+            NewChoreAssignment {
+                chore_id: chore.id,
+                person_id: PersonId(alice),
+                assigned_by: None,
+                due_at: None,
+            },
+            NewChoreAssignment {
+                chore_id: chore.id,
+                person_id: PersonId(bob),
+                assigned_by: None,
+                due_at: None,
+            },
         ];
-        let assignments = insert_assignments_bulk_tx(&mut tx, &new_assignments).await.unwrap();
+        let assignments = insert_assignments_bulk_tx(&mut tx, &new_assignments)
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         assert_eq!(assignments.len(), 2);
@@ -341,7 +389,9 @@ mod tests {
 
     #[sqlx::test(migrations = "../../migrations")]
     async fn all_people_exist_returns_false_when_all_ids_unknown(pool: PgPool) {
-        assert!(!all_people_exist(&pool, &[Uuid::new_v4(), Uuid::new_v4()]).await.unwrap());
+        assert!(!all_people_exist(&pool, &[Uuid::new_v4(), Uuid::new_v4()])
+            .await
+            .unwrap());
     }
 
     #[test]
@@ -356,13 +406,18 @@ mod tests {
             completed_at: None,
             created_at: chrono::Utc::now(),
         };
-        assert!(matches!(ChoreAssignment::try_from(row), Err(RepoError::Database(_))));
+        assert!(matches!(
+            ChoreAssignment::try_from(row),
+            Err(RepoError::Database(_))
+        ));
     }
 
     #[sqlx::test(migrations = "../../migrations")]
     async fn insert_chore_tx_does_not_persist_on_rollback(pool: PgPool) {
         let mut tx = pool.begin().await.unwrap();
-        insert_chore_tx(&mut tx, &new_chore("Ghost chore", None)).await.unwrap();
+        insert_chore_tx(&mut tx, &new_chore("Ghost chore", None))
+            .await
+            .unwrap();
         tx.rollback().await.unwrap();
 
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM chores")
@@ -390,7 +445,9 @@ mod tests {
     #[sqlx::test(migrations = "../../migrations")]
     async fn insert_assignments_bulk_tx_returns_error_for_nonexistent_person(pool: PgPool) {
         let mut tx = pool.begin().await.unwrap();
-        let chore = insert_chore_tx(&mut tx, &new_chore("Clean", None)).await.unwrap();
+        let chore = insert_chore_tx(&mut tx, &new_chore("Clean", None))
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         let mut tx = pool.begin().await.unwrap();
@@ -407,7 +464,9 @@ mod tests {
     #[sqlx::test(migrations = "../../migrations")]
     async fn insert_assignments_bulk_tx_stores_assigned_by(pool: PgPool) {
         let mut tx = pool.begin().await.unwrap();
-        let chore = insert_chore_tx(&mut tx, &new_chore("Cook dinner", None)).await.unwrap();
+        let chore = insert_chore_tx(&mut tx, &new_chore("Cook dinner", None))
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         let alice = seed_person(&pool, "Alice").await;
@@ -420,7 +479,9 @@ mod tests {
             assigned_by: Some(PersonId(bob)),
             due_at: None,
         }];
-        let assignments = insert_assignments_bulk_tx(&mut tx, &new_assignments).await.unwrap();
+        let assignments = insert_assignments_bulk_tx(&mut tx, &new_assignments)
+            .await
+            .unwrap();
         tx.commit().await.unwrap();
 
         assert_eq!(assignments[0].assigned_by, Some(PersonId(bob)));

@@ -4,6 +4,7 @@
 //! It depends on `allowance-types` and `allowance-domain`.
 
 pub mod chore;
+pub mod chore_query;
 pub mod error;
 pub mod person;
 

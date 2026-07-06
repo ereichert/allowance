@@ -2,7 +2,7 @@ export interface Chore {
   id: string
   description: string
   value_cents: number
-  recurrence: string | null
+  recurrence_cron: string | null
   is_active: boolean
   created_at: string
   updated_at: string
