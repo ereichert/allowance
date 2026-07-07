@@ -17,9 +17,9 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgres://allowance:allowance@postgres:5432/allowance}
       LISTEN_ADDR: ${LISTEN_ADDR:-0.0.0.0:3000}
       RUST_LOG: ${RUST_LOG:-info}
-      # VITE_ prefix is required for Vite to expose this to browser code.
-      # Value uses localhost because the browser hits the host-forwarded port.
-      VITE_ALLOWANCE_API_URL: ${VITE_ALLOWANCE_API_URL:-http://localhost:3000}
+      # Compose-network hostname for Playwright (browser launched inside this
+      # container can't reach the frontend via localhost — see design-decisions.md).
+      PLAYWRIGHT_BASE_URL: ${PLAYWRIGHT_BASE_URL:-http://frontend:5173}
     command: sleep infinity
     depends_on:
       postgres:
@@ -63,10 +63,6 @@ services:
     volumes:
       - .:/app
       - frontend-node-modules:/app/frontend/node_modules
-    environment:
-      # VITE_ prefix is required for Vite to expose this to browser code.
-      # Value uses localhost because the browser hits the host-forwarded port.
-      VITE_ALLOWANCE_API_URL: ${VITE_ALLOWANCE_API_URL:-http://localhost:3000}
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     # npm ci (not install): fails on a stale lockfile instead of rewriting it,
