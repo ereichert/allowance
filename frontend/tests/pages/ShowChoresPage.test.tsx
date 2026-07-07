@@ -70,6 +70,19 @@ describe('ShowChoresPage', () => {
     expect(screen.getByText('Failed to load chores')).toBeInTheDocument()
   })
 
+  it('does not show the empty-chores state when loading fails', () => {
+    mockUseChores.mockReturnValue(makeChoresHook({ error: 'Failed to load chores' }))
+    renderShowChoresPage('/chores')
+    expect(screen.queryByText(/no chores yet/i)).not.toBeInTheDocument()
+  })
+
+  it('does not show pagination controls when loading fails', () => {
+    mockUseChores.mockReturnValue(makeChoresHook({ error: 'Failed to load chores' }))
+    renderShowChoresPage('/chores')
+    expect(screen.queryByRole('button', { name: /next/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /previous/i })).not.toBeInTheDocument()
+  })
+
   it('fetches the page number given in the URL', () => {
     mockUseChores.mockReturnValue(makeChoresHook({ totalPages: 5 }))
     renderShowChoresPage('/chores?page=3')

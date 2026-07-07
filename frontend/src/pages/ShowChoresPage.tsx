@@ -26,27 +26,32 @@ export function ShowChoresPage() {
     setSearchParams(nextPage > 1 ? { page: String(nextPage) } : {})
   }
 
+  function renderBody() {
+    if (loading || isInvalidPage) return <p>Loading chores…</p>
+    if (error) return null
+
+    return (
+      <>
+        <ChoresTable chores={chores} />
+        <div className="show-chores-page__pagination">
+          <button type="button" onClick={() => goToPage(page - 1)} disabled={page <= 1}>
+            Previous
+          </button>
+          <span>
+            Page {page} of {totalPages}
+          </span>
+          <button type="button" onClick={() => goToPage(page + 1)} disabled={page >= totalPages}>
+            Next
+          </button>
+        </div>
+      </>
+    )
+  }
+
   return (
     <div className="show-chores-page">
       <StatusMessage status={error ? 'error' : 'idle'} message={error} />
-      {loading || isInvalidPage ? (
-        <p>Loading chores…</p>
-      ) : (
-        <>
-          <ChoresTable chores={chores} />
-          <div className="show-chores-page__pagination">
-            <button type="button" onClick={() => goToPage(page - 1)} disabled={page <= 1}>
-              Previous
-            </button>
-            <span>
-              Page {page} of {totalPages}
-            </span>
-            <button type="button" onClick={() => goToPage(page + 1)} disabled={page >= totalPages}>
-              Next
-            </button>
-          </div>
-        </>
-      )}
+      {renderBody()}
     </div>
   )
 }
