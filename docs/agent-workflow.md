@@ -76,6 +76,8 @@ Before ending any task that modifies code:
 
 For interactive verification in a real browser (not a checked-in test), the Playwright MCP server is registered in `.mcp.json` and runs headless inside the `dev` container. It lets an agent navigate, read the accessibility tree, click, and screenshot the running app directly — useful for confirming a UI change actually works before writing (or in addition to) a Playwright Test spec. This doesn't block a human from independently opening `http://localhost:5173` per "Validating Results" above — the two are separate browser sessions.
 
+Because that browser runs inside the `dev` container's own network namespace, `localhost`/`127.0.0.1` resolve to the `dev` container itself, not the host — navigate to the compose-network hostnames instead: `http://frontend:5173` for the app, `http://backend:3000` for direct API calls. See [Design Decisions](design-decisions.md) for the full rationale.
+
 For the checked-in regression suite, run `just test-e2e` (requires `just up` first so `frontend`/`backend` are reachable). Specs live in `frontend/tests/e2e/`; the HTML report is written to `frontend/playwright-report/` and a JUnit XML report to `frontend/test-results/junit.xml` for future CI consumption.
 
 ## Running Arbitrary Commands in the Container
