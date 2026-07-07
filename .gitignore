@@ -13,6 +13,10 @@ node_modules/
 frontend/dist/
 frontend/build/
 *.tsbuildinfo
+frontend/playwright-report/
+frontend/test-results/
+frontend/playwright/.cache/
+frontend/.playwright-mcp/
 
 # =============================================================================
 # Environment & secrets
