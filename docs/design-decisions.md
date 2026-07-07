@@ -90,3 +90,33 @@ Cargo serializes writes to a target directory with a file lock. `backend` runs `
 **Decision:** The `exec` recipe passes args directly to `docker compose exec dev`, without a `--` separator.
 
 Docker Compose v2 does not accept `--` as an argument separator (it treats it as a literal argument and fails). The correct usage is `just exec bash -c 'cd /app && echo hello'` with no separator.
+
+---
+
+## Playwright for Browser Verification, Split by Use Case
+
+**Decision:** Use Playwright as the browser-automation engine, split into two entry points: Playwright MCP for interactive, agent-driven verification, and Playwright Test for a checked-in regression suite (`just test-e2e`).
+
+An evaluation (tracked in issue #36) ruled out chrome-cli — it's macOS-only and cannot run on Linux CI runners (Jenkins/CircleCI), which this project's requirements explicitly call for — and several AI-native browser agents (Stagehand, browser-use), which solve an "unknown DOM" problem this project doesn't have; their runtime LLM-driven reasoning is unnecessary cost and non-determinism against a known, first-party app. Playwright MCP lets an agent drive a real browser turn-by-turn (navigate, read the accessibility tree, click, screenshot) for verifying work during development — the actual capability requested. Playwright Test produces JUnit/HTML/trace reports, so a future CI wiring is a config-only addition, not a rework.
+
+`just test-e2e` is a separate recipe, not folded into `just test`: e2e tests require the `frontend` and `backend` containers up and reachable (today's `just test` only requires `dev`, per `_check-dev`) and are slower. It is not yet part of the Stop-hook gate.
+
+Chromium is baked directly into `docker/Dockerfile.dev` (`npx playwright@<version> install --with-deps chromium`) rather than installed into a runtime-populated volume. The binary lives in the image layer, so it survives container restarts automatically and is only invalidated by `just rebuild` — exactly when a version bump should take effect. `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` makes any drift between the image's pinned version and `frontend/package.json`'s `@playwright/test` version fail loudly at install time instead of silently attempting a network re-download.
+
+The Playwright MCP server (`.mcp.json`) runs *inside* the `dev` container via `docker compose exec -T -w /app/frontend`, not via host-side `npx`, matching this project's "everything goes through `just`/the container" convention (see CLAUDE.md) and avoiding an undeclared host Node dependency. The explicit `-w /app/frontend` matters: `@playwright/mcp` is a `frontend` devDependency, but `docker compose exec`'s default working directory is `/app` (the repo root), so `npx --no-install` can't find it without the override. It runs headless (`dev` has no display) — this doesn't prevent a human from independently verifying the same change by opening `http://localhost:5173` in their own browser, per the existing "Validating Results" workflow.
+
+`@playwright/mcp`'s `--browser` flag only accepts channel names (`chrome`, `firefox`, `webkit`, `msedge`) — there is no `chromium` value, and passing one is silently ignored, falling back to the `chrome` channel, which requires a separate Google Chrome/Chrome-for-Testing binary that was never installed (only plain Chromium was, per the image decision above). The fix is `--executable-path`, pointed directly at the Chromium binary baked into the image, resolved dynamically (`find /root/.cache/ms-playwright -maxdepth 1 -name 'chromium-*' -type d`) rather than hardcoding Playwright's internal revision-numbered directory name (e.g. `chromium-1228`), so a future version bump doesn't silently break the path.
+
+`frontend/vitest.config.ts` explicitly excludes `tests/e2e/**` (`exclude: [...configDefaults.exclude, 'tests/e2e/**']`). Without this, vitest's default file discovery also picks up Playwright spec files (they match the same `*.spec.ts` pattern) and fails with "Playwright Test did not expect test() to be called here" — the two runners' `test()`/`expect` are different objects. `npm run test:architecture` was unaffected (it only scans `src/`).
+
+---
+
+## Relative API Base URL + Vite Proxy (not an absolute per-environment URL)
+
+**Decision:** `frontend/src/api/client.ts` calls the API via a relative path (`/api/v1`), and `frontend/vite.config.ts` proxies `/api` server-side to `http://backend:3000`.
+
+Discovered while wiring up Playwright: the app previously called a hardcoded absolute URL (`http://localhost:3000/api/v1`), which only worked because a human's host browser has `localhost:3000` forwarded to the backend container. A Playwright browser launched *inside* the `dev` container has its own network namespace — `localhost:3000` there means the `dev` container itself, so every API call would fail. `docker-compose.yml` had set an env var (`VITE_ALLOWANCE_API_URL`) intended to make this configurable, but it didn't match the name `client.ts` actually read (`VITE_API_URL`) and was never wired to anything — dead config since the containerized dev environment was introduced.
+
+A relative URL sidesteps the problem instead of just fixing the variable name: Vite's own dev server proxies `/api/*` to `backend:3000` server-side, so the browser (host or in-container) never needs to know the backend's address — it just asks whatever origin served the page, and that origin's Vite process makes the real hop across the Docker network.
+
+A second, related fix was needed once Playwright actually ran: Vite's dev server rejects requests whose `Host` header it doesn't recognize (DNS-rebinding protection). A Playwright browser navigating to `http://frontend:5173` sends `Host: frontend:5173`, which isn't recognized by default and gets blocked with "This host is not allowed." `frontend/vite.config.ts` adds `server.allowedHosts: ['frontend']` to allow it.
