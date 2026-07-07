@@ -31,7 +31,7 @@ export function ShowChoresPage() {
       <StatusMessage status={error ? 'error' : 'idle'} message={error} />
       {loading || isInvalidPage ? (
         <p>Loading chores…</p>
-      ) : (
+      ) : error ? null : (
         <>
           <ChoresTable chores={chores} />
           <div className="show-chores-page__pagination">
