@@ -11,6 +11,7 @@
     "format:check": "prettier --check 'src/**/*.{ts,tsx}'",
     "test": "vitest run",
     "test:architecture": "node tests/architecture.mjs",
+    "test:e2e": "playwright test",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -20,6 +21,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/mcp": "0.0.77",
+    "@playwright/test": "1.61.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
