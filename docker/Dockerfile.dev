@@ -27,6 +27,15 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
+# Chromium + its OS-level deps for Playwright, pinned to match
+# @playwright/test and @playwright/mcp in frontend/package.json.
+# Bump all three together, then `just rebuild`.
+# PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD makes a version drift fail fast and loudly
+# (via npm's postinstall check) instead of silently attempting a re-download.
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+RUN npx --yes playwright@1.61.1 install --with-deps chromium \
+    && rm -rf /var/lib/apt/lists/*
+
 # Rust dev tools
 # sqlx-cli: postgres feature only (skips sqlite, saves ~2 min build time)
 # cargo-nextest: --locked prevents lockfile mutation during install

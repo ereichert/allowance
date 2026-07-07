@@ -22,6 +22,20 @@ _check-dev:
         fi
     fi
 
+_check-e2e:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "{{in_container}}" ]; then
+        running="$({{_compose}} ps --services --filter status=running 2>/dev/null)"
+        for svc in frontend backend; do
+            if ! echo "$running" | grep -q "^${svc}$"; then
+                echo "Error: $svc container is not running."
+                echo "Run 'just up' to start the environment."
+                exit 1
+            fi
+        done
+    fi
+
 # ─── Colima ──────────────────────────────────────────────────────────────────
 # Use './bootstrap' on a new machine to install Colima and all other prereqs.
 
@@ -128,6 +142,15 @@ test: _check-dev
         cd ../frontend && npm run test:architecture && npm test
     else
         {{_compose}} exec dev just test
+    fi
+
+test-e2e: _check-dev _check-e2e
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -n "{{in_container}}" ]; then
+        cd frontend && npm install && npm run test:e2e
+    else
+        {{_compose}} exec dev just test-e2e
     fi
 
 # Apply pending database migrations

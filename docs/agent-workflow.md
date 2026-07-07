@@ -61,6 +61,7 @@ Before ending any task that modifies code:
 - [ ] `just test` passes with no failures
 - [ ] `just lint` passes (clippy + ESLint, zero warnings)
 - [ ] `just fmt` was run — all files are formatted
+- [ ] `just test-e2e` passes, if the change touches frontend UI (optional — not yet part of the `just test` gate the Stop hook checks; see below)
 - [ ] All new list endpoints support pagination and at least one filter
 - [ ] All multi-row database writes use transactions; bulk inserts where applicable
 - [ ] Both happy paths and error paths have test coverage
@@ -69,7 +70,13 @@ Before ending any task that modifies code:
 - [ ] A GitHub issue exists for this task (create with `gh issue create` if not)
 - [ ] PR opened with `gh pr create` referencing the issue number
 
-`just test` is the final gate. If the Stop hook fires and reports failures, fix them before closing the session.
+`just test` is the final gate. If the Stop hook fires and reports failures, fix them before closing the session. `just test-e2e` is a separate, optional recipe — it requires the `frontend` and `backend` containers running (not just `dev`) and is not part of the Stop-hook gate yet.
+
+## Agent-Driven Browser Verification
+
+For interactive verification in a real browser (not a checked-in test), the Playwright MCP server is registered in `.mcp.json` and runs headless inside the `dev` container. It lets an agent navigate, read the accessibility tree, click, and screenshot the running app directly — useful for confirming a UI change actually works before writing (or in addition to) a Playwright Test spec. This doesn't block a human from independently opening `http://localhost:5173` per "Validating Results" above — the two are separate browser sessions.
+
+For the checked-in regression suite, run `just test-e2e` (requires `just up` first so `frontend`/`backend` are reachable). Specs live in `frontend/tests/e2e/`; the HTML report is written to `frontend/playwright-report/` and a JUnit XML report to `frontend/test-results/junit.xml` for future CI consumption.
 
 ## Running Arbitrary Commands in the Container
 
@@ -95,7 +102,7 @@ just shell            # open a bash shell in the dev container
 
 ## When to Rebuild the Image
 
-Rebuild only when `Cargo.toml`, `Cargo.lock`, or `docker/Dockerfile.dev` change:
+Rebuild only when `Cargo.toml`, `Cargo.lock`, `docker/Dockerfile.dev` change, or `frontend/package.json`'s `@playwright/test`/`@playwright/mcp` versions are bumped (the Dockerfile's pinned Chromium version must move in lockstep):
 
 ```sh
 just rebuild        # rebuild all container images and restart containers
