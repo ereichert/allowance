@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "docker",
+      "args": [
+        "compose", "exec", "-T", "-w", "/app/frontend", "dev",
+        "bash", "-c",
+        "exec npx --no-install @playwright/mcp --headless --no-sandbox --isolated --executable-path \"$(find /root/.cache/ms-playwright -maxdepth 1 -name 'chromium-*' -type d | head -n1)/chrome-linux/chrome\""
+      ]
+    }
+  }
+}
