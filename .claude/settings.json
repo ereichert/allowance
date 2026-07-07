@@ -24,6 +24,7 @@
       "Bash(just *)",
       "Bash(git *)",
       "Bash(gh *)",
+      "Bash(curl *)",
       "Bash(head *)",
       "Bash(tail *)",
       "Bash(wc *)"
