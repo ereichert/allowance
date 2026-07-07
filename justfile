@@ -22,7 +22,6 @@ _check-dev:
         fi
     fi
 
-# Verify the frontend and backend containers are running before e2e tests
 _check-e2e:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -145,9 +144,6 @@ test: _check-dev
         {{_compose}} exec dev just test
     fi
 
-# Run Playwright end-to-end browser tests (requires frontend + backend
-# containers up and reachable; not part of `just test` yet — see
-# docs/design-decisions.md)
 test-e2e: _check-dev _check-e2e
     #!/usr/bin/env bash
     set -euo pipefail
