@@ -4,6 +4,7 @@ use allowance_domain::Chore;
 use sqlx::PgPool;
 
 use crate::error::ServiceError;
+use crate::pagination;
 
 #[derive(Debug, Clone)]
 pub struct ListChoresQuery {
@@ -18,20 +19,15 @@ pub struct ChoresPage {
     pub total: i64,
 }
 
-const MAX_PER_PAGE: i64 = 100;
-
-/// `per_page` is clamped to `MAX_PER_PAGE`; `page` is clamped to a minimum of 1.
 pub async fn list_chores(
     pool: &PgPool,
     query: ListChoresQuery,
 ) -> Result<ChoresPage, ServiceError> {
-    let page = query.page.max(1);
-    let per_page = query.per_page.clamp(1, MAX_PER_PAGE);
-    let offset = (page - 1) * per_page;
+    let pagination = pagination::clamp(query.page, query.per_page);
 
     let filter = allowance_repo::chore_query::ChoreFilter {
-        limit: per_page,
-        offset,
+        limit: pagination.per_page,
+        offset: pagination.offset,
         description: query.description.clone(),
     };
 
@@ -100,7 +96,7 @@ mod tests {
 
     #[sqlx::test(migrations = "../../migrations")]
     async fn list_chores_clamps_per_page_to_max(pool: PgPool) {
-        seed_many_chores(&pool, MAX_PER_PAGE + 1, 100).await;
+        seed_many_chores(&pool, pagination::MAX_PER_PAGE + 1, 100).await;
 
         let query = ListChoresQuery {
             page: 1,
@@ -108,8 +104,8 @@ mod tests {
             description: None,
         };
         let page = list_chores(&pool, query).await.unwrap();
-        assert_eq!(page.chores.len() as i64, MAX_PER_PAGE);
-        assert_eq!(page.total, MAX_PER_PAGE + 1);
+        assert_eq!(page.chores.len() as i64, pagination::MAX_PER_PAGE);
+        assert_eq!(page.total, pagination::MAX_PER_PAGE + 1);
     }
 
     #[sqlx::test(migrations = "../../migrations")]

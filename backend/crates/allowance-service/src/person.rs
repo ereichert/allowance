@@ -4,6 +4,7 @@ use allowance_domain::Person;
 use sqlx::PgPool;
 
 use crate::error::ServiceError;
+use crate::pagination;
 
 #[derive(Debug, Clone)]
 pub struct ListPeopleQuery {
@@ -18,20 +19,15 @@ pub struct PeoplePage {
     pub total: i64,
 }
 
-const MAX_PER_PAGE: i64 = 100;
-
-/// `per_page` is clamped to `MAX_PER_PAGE`; `page` is clamped to a minimum of 1.
 pub async fn list_people(
     pool: &PgPool,
     query: ListPeopleQuery,
 ) -> Result<PeoplePage, ServiceError> {
-    let page = query.page.max(1);
-    let per_page = query.per_page.clamp(1, MAX_PER_PAGE);
-    let offset = (page - 1) * per_page;
+    let pagination = pagination::clamp(query.page, query.per_page);
 
     let filter = allowance_repo::person::PeopleFilter {
-        limit: per_page,
-        offset,
+        limit: pagination.per_page,
+        offset: pagination.offset,
         name: query.name.clone(),
     };
 
