@@ -6,10 +6,10 @@
 
 pub mod assignment;
 pub mod chore;
-pub mod person;
 pub mod payout;
+pub mod person;
 
 pub use assignment::{AssignmentId, AssignmentStatus, ChoreAssignment, NewChoreAssignment};
 pub use chore::{Chore, ChoreId, ChoreValidationError, NewChore, Recurrence};
-pub use person::{Person, PersonId, Role};
 pub use payout::{PayoutId, PayoutType};
+pub use person::{Person, PersonId, Role};

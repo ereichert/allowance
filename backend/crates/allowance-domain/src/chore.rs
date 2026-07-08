@@ -112,7 +112,9 @@ mod tests {
 
     #[test]
     fn valid_chore_passes_validation() {
-        assert!(NewChore::new("Take out trash", Some(100), None).validate().is_ok());
+        assert!(NewChore::new("Take out trash", Some(100), None)
+            .validate()
+            .is_ok());
     }
 
     #[test]
@@ -141,6 +143,8 @@ mod tests {
 
     #[test]
     fn zero_value_cents_is_valid() {
-        assert!(NewChore::new("Water plants", Some(0), None).validate().is_ok());
+        assert!(NewChore::new("Water plants", Some(0), None)
+            .validate()
+            .is_ok());
     }
 }

@@ -23,8 +23,7 @@ export function AddChoreForm({ people, onSave, disabled }: AddChoreFormProps) {
     e.preventDefault()
     if (!description.trim()) return
 
-    const valueCents =
-      valueDollars !== '' ? Math.round(parseFloat(valueDollars) * 100) : undefined
+    const valueCents = valueDollars !== '' ? Math.round(parseFloat(valueDollars) * 100) : undefined
 
     onSave({
       description: description.trim(),
@@ -35,9 +34,7 @@ export function AddChoreForm({ people, onSave, disabled }: AddChoreFormProps) {
   }
 
   function toggleAssignee(id: string) {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    )
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
 
   return (
