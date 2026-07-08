@@ -19,8 +19,8 @@ else
 fi
 
 # Install prerequisites
-echo "Installing prerequisites (colima, docker, docker-compose, just)..."
-brew install colima docker docker-compose just
+echo "Installing prerequisites (colima, docker, docker-compose, just, jq)..."
+brew install colima docker docker-compose just jq
 
 # Start Colima (container runtime VM)
 if colima status 2>/dev/null | grep -q "Running"; then

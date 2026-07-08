@@ -107,12 +107,21 @@ For the checked-in regression suite, run `just test-e2e` (requires `just up` fir
 
 ## Running Arbitrary Commands in the Container
 
+`exec` takes a single argument, so always wrap the command in single quotes —
+this lets compound commands (`&&`, `|`, `;`) run entirely inside the
+container instead of being split across the host/container boundary.
+
 ```sh
-just exec psql '$DATABASE_URL'
-just exec bash
-just exec cargo check
-just exec bash -c 'cd /app/frontend && npm install'
+just exec 'psql $DATABASE_URL'
+just exec 'bash'
+just exec 'cargo check'
+just exec 'cd /app/frontend && npm install'
 ```
+
+Raw `docker`/`docker compose` calls that have a `just` equivalent (`ps`,
+`restart`, `logs`, `up`, `down`, `build`, `exec`, `config`) are blocked by a
+`PreToolUse` hook (`.claude/hooks/block-docker-compose-bypass.sh`) — see
+[Design Decisions](design-decisions.md).
 
 ## Container Lifecycle
 
@@ -120,6 +129,7 @@ just exec bash -c 'cd /app/frontend && npm install'
 just up               # start all containers (detached) — backend + frontend start automatically
 just down             # stop containers, keep volumes (fast restart)
 just status           # show running container status
+just compose-config   # render the fully-resolved compose configuration
 just logs             # tail all container logs
 just logs backend     # tail backend logs only
 just logs frontend    # tail frontend logs only
