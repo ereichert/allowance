@@ -31,6 +31,8 @@ The backend and frontend dev servers run in their own dedicated Compose services
 
 This means `just test` (and every other dev command) works identically regardless of where it is typed — the agent and the human both use the same interface.
 
+A `PreToolUse` hook (`.claude/hooks/block-docker-compose-bypass.sh`) enforces this for agents: it denies raw `docker`/`docker compose` calls that have a direct `just` equivalent, redirecting to the right recipe. Without it, nothing stopped an agent from reaching for `docker compose ps` instead of `just status` — the single-interface benefit only holds if it's actually used.
+
 ---
 
 ## Named Volumes for Build Artifacts

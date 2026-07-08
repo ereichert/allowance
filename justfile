@@ -72,6 +72,9 @@ rebuild: build-image up
 status:
     {{_compose}} ps
 
+compose-config:
+    {{_compose}} config
+
 # Restart one container in place (all, if omitted): just restart frontend
 restart service="":
     {{_compose}} restart {{service}}
@@ -127,11 +130,11 @@ build: _check-dev
 shell: _check-dev
     {{_compose}} exec dev bash
 
-# Run an arbitrary command inside the dev container
-# Usage: just exec psql '$DATABASE_URL'
-#        just exec bash -c 'cd /app/frontend && npm install'
-exec +args: _check-dev
-    {{_compose}} exec dev {{args}}
+# quote(cmd) preserves compound commands (&&, |, ;) as one argument so they
+# run inside the container instead of being split by the recipe's own shell line.
+# Usage: just exec 'cd /app/frontend && npm install'
+exec cmd: _check-dev
+    {{_compose}} exec dev sh -c {{quote(cmd)}}
 
 # Run all tests (always runs inside the container)
 test: _check-dev
