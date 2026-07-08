@@ -20,6 +20,8 @@
       "Skill(commit:*)",
       "Skill(review-pr)",
       "Skill(review-pr:*)",
+      "Skill(audit-comments)",
+      "Skill(audit-comments:*)",
       "Bash(colima *)",
       "Bash(just *)",
       "Bash(git *)",

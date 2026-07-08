@@ -112,7 +112,6 @@ Exceptions (no test required):
 ### Both
 
 - Names are descriptive: no abbreviations except universally known ones (id, url, api)
-- Every public function/component has a brief doc comment explaining *why* it exists
 - Every list endpoint must support pagination and at least one filter parameter. See [API Contracts](docs/api-contracts.md) for the required envelope shape.
 - Follow naming conventions exactly as specified in [Style Guide](docs/style-guide.md). Violations are not acceptable.
 
