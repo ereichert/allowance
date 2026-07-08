@@ -96,8 +96,12 @@ mod tests {
 
     use allowance_test_helpers::insert_person;
 
-fn all_filter() -> PeopleFilter {
-        PeopleFilter { limit: 100, offset: 0, name: None }
+    fn all_filter() -> PeopleFilter {
+        PeopleFilter {
+            limit: 100,
+            offset: 0,
+            name: None,
+        }
     }
 
     #[sqlx::test(migrations = "../../migrations")]
@@ -151,7 +155,11 @@ fn all_filter() -> PeopleFilter {
     async fn list_people_offset_beyond_row_count_returns_empty(pool: PgPool) {
         insert_person(&pool, "Alice", "Child").await;
 
-        let filter = PeopleFilter { limit: 100, offset: 10, name: None };
+        let filter = PeopleFilter {
+            limit: 100,
+            offset: 10,
+            name: None,
+        };
         let people = list_people(&pool, &filter).await.unwrap();
         assert!(people.is_empty());
     }
@@ -161,7 +169,11 @@ fn all_filter() -> PeopleFilter {
         insert_person(&pool, "Alice", "Child").await;
         insert_person(&pool, "Bob", "Child").await;
 
-        let filter = PeopleFilter { limit: 100, offset: 0, name: Some("ali".to_string()) };
+        let filter = PeopleFilter {
+            limit: 100,
+            offset: 0,
+            name: Some("ali".to_string()),
+        };
         let people = list_people(&pool, &filter).await.unwrap();
         assert_eq!(people.len(), 1);
         assert_eq!(people[0].name, "Alice");
@@ -171,7 +183,11 @@ fn all_filter() -> PeopleFilter {
     async fn list_people_name_filter_is_case_insensitive(pool: PgPool) {
         insert_person(&pool, "Alice", "Child").await;
 
-        let filter = PeopleFilter { limit: 100, offset: 0, name: Some("ALICE".to_string()) };
+        let filter = PeopleFilter {
+            limit: 100,
+            offset: 0,
+            name: Some("ALICE".to_string()),
+        };
         let people = list_people(&pool, &filter).await.unwrap();
         assert_eq!(people.len(), 1);
     }
@@ -180,7 +196,11 @@ fn all_filter() -> PeopleFilter {
     async fn list_people_name_filter_with_no_match_returns_empty(pool: PgPool) {
         insert_person(&pool, "Alice", "Child").await;
 
-        let filter = PeopleFilter { limit: 100, offset: 0, name: Some("zzz".to_string()) };
+        let filter = PeopleFilter {
+            limit: 100,
+            offset: 0,
+            name: Some("zzz".to_string()),
+        };
         let people = list_people(&pool, &filter).await.unwrap();
         assert!(people.is_empty());
     }
@@ -191,7 +211,11 @@ fn all_filter() -> PeopleFilter {
         insert_person(&pool, "Bob", "Child").await;
         insert_person(&pool, "Carol", "Child").await;
 
-        let filter = PeopleFilter { limit: 2, offset: 0, name: None };
+        let filter = PeopleFilter {
+            limit: 2,
+            offset: 0,
+            name: None,
+        };
         let people = list_people(&pool, &filter).await.unwrap();
         assert_eq!(people.len(), 2);
     }
@@ -202,7 +226,11 @@ fn all_filter() -> PeopleFilter {
         insert_person(&pool, "Bob", "Child").await;
         insert_person(&pool, "Carol", "Child").await;
 
-        let filter = PeopleFilter { limit: 100, offset: 1, name: None };
+        let filter = PeopleFilter {
+            limit: 100,
+            offset: 1,
+            name: None,
+        };
         let people = list_people(&pool, &filter).await.unwrap();
         assert_eq!(people.len(), 2);
         assert_eq!(people[0].name, "Bob");
