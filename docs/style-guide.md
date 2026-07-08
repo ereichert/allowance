@@ -103,9 +103,12 @@
 
 ### Comments
 
-- Explain *why*, not *what*
-- Doc comments on all public items
-- No commented-out code — delete it (git has history)
+Explain *why*, not *what*. Strongly prefer running the `/audit-comments` skill
+before committing — it checks a diff, PR, file, or directory against the full
+criteria (invokable by a human or an agent) and reports violations without
+editing anything.
+
+No commented-out code — delete it (git has history).
 
 ### Commits
 

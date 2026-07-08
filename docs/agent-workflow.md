@@ -66,6 +66,18 @@ re-commit. Bypass intentionally with `git commit --no-verify`.
 If you set up the repo before this hook existed, run `just install-hooks` once
 to opt in.
 
+## Comment Audits
+
+The `/audit-comments` skill checks comments against the project's why-not-what
+rule (see [Style Guide § Comments](style-guide.md)). It's invokable by a human
+(`/audit-comments`) or an agent (via the Skill tool), and takes an optional
+scope: a PR number, a file or directory path, or — with no argument — the
+current uncommitted changes. It only reports violations; it does not edit
+files.
+
+Run it before committing. It is not currently wired into the pre-commit hook
+or the Stop hook — it's a deliberate, on-demand check, not an automatic gate.
+
 ## Task Completion Checklist
 
 Before ending any task that modifies code:
@@ -78,6 +90,7 @@ Before ending any task that modifies code:
 - [ ] All multi-row database writes use transactions; bulk inserts where applicable
 - [ ] Both happy paths and error paths have test coverage
 - [ ] No test contains inline comments explaining what it does — rename or extract instead
+- [ ] Ran `/audit-comments` and addressed any violations — see [Comment Audits](#comment-audits) above
 - [ ] Use `/commit` to commit (never `git commit` directly)
 - [ ] A GitHub issue exists for this task (create with `gh issue create` if not)
 - [ ] PR opened with `gh pr create` referencing the issue number
