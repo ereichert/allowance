@@ -209,12 +209,8 @@ fmt-check: _check-dev
         {{_compose}} exec dev just fmt-check
     fi
 
-# Run formatting and lint checks; used by the .githooks/pre-commit hook
 precommit: fmt-check lint
 
-# ─── Git hooks ────────────────────────────────────────────────────────────────
-
-# Point git at the checked-in .githooks directory so hooks are version-controlled
 install-hooks:
     git config core.hooksPath .githooks
     @echo "Git hooks installed. 'just precommit' now runs automatically before each commit."
