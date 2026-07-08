@@ -52,7 +52,7 @@ pub async fn count_chores(pool: &PgPool, description: Option<&str>) -> Result<i6
 mod tests {
     use super::*;
 
-    use allowance_test_helpers::seed_chore;
+    use allowance_test_helpers::{seed_chore, seed_inactive_chore};
 
     fn all_filter() -> ChoreFilter {
         ChoreFilter {
@@ -73,6 +73,21 @@ mod tests {
         let descriptions: Vec<&str> = chores.iter().map(|c| c.description.as_str()).collect();
         assert!(descriptions.contains(&"Sweep porch"));
         assert!(descriptions.contains(&"Wash dishes"));
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn list_chores_includes_inactive_chores(pool: PgPool) {
+        seed_chore(&pool, "Sweep porch", 100).await;
+        seed_inactive_chore(&pool, "Retired chore", 150).await;
+
+        let chores = list_chores(&pool, &all_filter()).await.unwrap();
+        assert_eq!(chores.len(), 2);
+
+        let retired = chores
+            .iter()
+            .find(|c| c.description == "Retired chore")
+            .expect("inactive chore should still be returned");
+        assert!(!retired.is_active);
     }
 
     #[sqlx::test(migrations = "../../migrations")]
@@ -201,6 +216,15 @@ mod tests {
         seed_chore(&pool, "Wash dishes", 150).await;
 
         let total = count_chores(&pool, Some("take out")).await.unwrap();
+        assert_eq!(total, 2);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn count_chores_includes_inactive_chores(pool: PgPool) {
+        seed_chore(&pool, "Sweep porch", 100).await;
+        seed_inactive_chore(&pool, "Retired chore", 150).await;
+
+        let total = count_chores(&pool, None).await.unwrap();
         assert_eq!(total, 2);
     }
 

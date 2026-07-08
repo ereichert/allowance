@@ -45,7 +45,7 @@ pub async fn list_chores(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use allowance_test_helpers::seed_chore;
+    use allowance_test_helpers::{seed_chore, seed_inactive_chore};
     use sqlx::PgPool;
 
     fn default_query() -> ListChoresQuery {
@@ -64,6 +64,22 @@ mod tests {
         let page = list_chores(&pool, default_query()).await.unwrap();
         assert_eq!(page.chores.len(), 2);
         assert_eq!(page.total, 2);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn list_chores_includes_inactive_chores(pool: PgPool) {
+        seed_chore(&pool, "Sweep porch", 100).await;
+        seed_inactive_chore(&pool, "Retired chore", 150).await;
+
+        let page = list_chores(&pool, default_query()).await.unwrap();
+        assert_eq!(page.total, 2);
+
+        let retired = page
+            .chores
+            .iter()
+            .find(|c| c.description == "Retired chore")
+            .expect("inactive chore should still be returned");
+        assert!(!retired.is_active);
     }
 
     #[sqlx::test(migrations = "../../migrations")]
