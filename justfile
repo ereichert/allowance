@@ -197,3 +197,20 @@ fmt: _check-dev
     else
         {{_compose}} exec dev just fmt
     fi
+
+# Check formatting without modifying files (rustfmt --check + prettier --check)
+fmt-check: _check-dev
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -n "{{in_container}}" ]; then
+        cd backend && cargo fmt --all -- --check
+        cd /app/frontend && npm install && npm run format:check
+    else
+        {{_compose}} exec dev just fmt-check
+    fi
+
+precommit: fmt-check lint
+
+install-hooks:
+    git config core.hooksPath .githooks
+    @echo "Git hooks installed. 'just precommit' now runs automatically before each commit."
