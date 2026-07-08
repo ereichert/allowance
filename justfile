@@ -176,13 +176,12 @@ db-reset: _check-dev
         {{_compose}} exec dev just db-reset
     fi
 
-# Check code quality (clippy + ESLint)
 lint: _check-dev
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -n "{{in_container}}" ]; then
         cd backend && cargo clippy -- -D warnings
-        cd ../frontend && npm install && npm run lint
+        cd ../frontend && npm install && npm run lint && npm run typecheck
     else
         {{_compose}} exec dev just lint
     fi
