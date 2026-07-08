@@ -67,3 +67,21 @@ pub async fn seed_chore_with_recurrence(
 ) -> Uuid {
     insert_chore(pool, description, value_cents, true, Some(recurrence_cron)).await
 }
+
+/// Bulk-seeds `count` active chores in a single INSERT so pagination tests can seed
+/// past a page-size limit without one round trip per row (see gh-20).
+pub async fn seed_many_chores(pool: &PgPool, count: i64, value_cents: i64) -> Vec<Uuid> {
+    sqlx::query_scalar::<_, Uuid>(
+        r#"
+        INSERT INTO chores (description, value_cents)
+        SELECT 'Chore ' || gs, $2
+        FROM generate_series(1, $1) AS gs
+        RETURNING id
+        "#,
+    )
+    .bind(count)
+    .bind(value_cents)
+    .fetch_all(pool)
+    .await
+    .unwrap()
+}
