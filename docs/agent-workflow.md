@@ -4,7 +4,8 @@ How to start the container environment, assign work to agents, and validate resu
 
 ## Prerequisites
 
-Nothing — the `bin/bootstrap` script installs everything (Homebrew, Colima, Docker, just).
+Nothing — the `bin/bootstrap` script installs everything (Homebrew, Colima, Docker, just) and
+installs the project's git hooks (see [Git Hooks](#git-hooks)).
 
 ## First-Time Setup
 
@@ -53,6 +54,17 @@ While the dev servers are running:
 
 - Open `http://localhost:5173` in your browser — React frontend
 - `curl http://localhost:3000/health` — returns `ok` when the backend is up
+
+## Git Hooks
+
+`bin/bootstrap` runs `just install-hooks`, which points git at the checked-in
+`.githooks/` directory (`core.hooksPath`). The `pre-commit` hook there runs
+`just precommit` (`fmt-check` + `lint`) before every commit, so unformatted or
+lint-failing code can't be committed. Fix reported issues with `just fmt`, then
+re-commit. Bypass intentionally with `git commit --no-verify`.
+
+If you set up the repo before this hook existed, run `just install-hooks` once
+to opt in.
 
 ## Task Completion Checklist
 

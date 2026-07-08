@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Runs formatting and lint checks before allowing a commit.
+# Installed via `just install-hooks` (sets core.hooksPath to this directory).
+# Bypass with `git commit --no-verify` when intentionally needed.
+set -euo pipefail
+
+if ! just precommit; then
+    echo ""
+    echo "Pre-commit checks failed. Run 'just fmt' to fix formatting, then re-commit."
+    exit 1
+fi

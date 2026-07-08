@@ -30,6 +30,10 @@ else
     colima start
 fi
 
+# Point git at the checked-in .githooks directory (formatting/lint checks on commit)
+echo "Installing git hooks..."
+just install-hooks
+
 echo ""
 echo "Bootstrap complete."
 echo ""
