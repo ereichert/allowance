@@ -6,6 +6,7 @@
 pub mod chore;
 pub mod chore_query;
 pub mod error;
+mod pagination;
 pub mod person;
 
 pub use error::ServiceError;
