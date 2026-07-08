@@ -19,14 +19,30 @@ pub async fn seed_person(pool: &PgPool, name: &str) -> Uuid {
     insert_person(pool, name, "Child").await
 }
 
-/// Insert a chore with the given description and value, returning its ID.
-pub async fn seed_chore(pool: &PgPool, description: &str, value_cents: i64) -> Uuid {
+/// Insert a chore with the given description, value, and active status, returning its ID.
+pub async fn insert_chore(
+    pool: &PgPool,
+    description: &str,
+    value_cents: i64,
+    is_active: bool,
+) -> Uuid {
     sqlx::query_scalar::<_, Uuid>(
-        "INSERT INTO chores (description, value_cents) VALUES ($1, $2) RETURNING id",
+        "INSERT INTO chores (description, value_cents, is_active) VALUES ($1, $2, $3) RETURNING id",
     )
     .bind(description)
     .bind(value_cents)
+    .bind(is_active)
     .fetch_one(pool)
     .await
     .unwrap()
+}
+
+/// Insert an active chore with the given description and value, returning its ID.
+pub async fn seed_chore(pool: &PgPool, description: &str, value_cents: i64) -> Uuid {
+    insert_chore(pool, description, value_cents, true).await
+}
+
+/// Insert a deactivated chore with the given description and value, returning its ID.
+pub async fn seed_inactive_chore(pool: &PgPool, description: &str, value_cents: i64) -> Uuid {
+    insert_chore(pool, description, value_cents, false).await
 }
