@@ -27,7 +27,8 @@
       "Bash(curl *)",
       "Bash(head *)",
       "Bash(tail *)",
-      "Bash(wc *)"
+      "Bash(wc *)",
+      "Bash(grep *)"
     ],
     "additionalDirectories": [
       "/Users/ereichert/dev/allowance/.claude",
