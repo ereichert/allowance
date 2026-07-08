@@ -11,7 +11,7 @@ const stubChore = {
   id: 'abc',
   description: 'Sweep',
   value_cents: 0,
-  recurrence: null,
+  recurrence_cron: null,
   is_active: true,
   created_at: '2026-04-02T00:00:00Z',
   updated_at: '2026-04-02T00:00:00Z',
