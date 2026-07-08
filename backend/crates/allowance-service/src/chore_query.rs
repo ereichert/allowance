@@ -45,7 +45,7 @@ pub async fn list_chores(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use allowance_test_helpers::{seed_chore, seed_inactive_chore};
+    use allowance_test_helpers::{seed_chore, seed_inactive_chore, seed_many_chores};
     use sqlx::PgPool;
 
     fn default_query() -> ListChoresQuery {
@@ -100,13 +100,31 @@ mod tests {
 
     #[sqlx::test(migrations = "../../migrations")]
     async fn list_chores_clamps_per_page_to_max(pool: PgPool) {
+        seed_many_chores(&pool, MAX_PER_PAGE + 1, 100).await;
+
         let query = ListChoresQuery {
             page: 1,
             per_page: 9999,
             description: None,
         };
         let page = list_chores(&pool, query).await.unwrap();
-        assert_eq!(page.total, 0);
+        assert_eq!(page.chores.len() as i64, MAX_PER_PAGE);
+        assert_eq!(page.total, MAX_PER_PAGE + 1);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn list_chores_clamps_page_below_minimum_to_one(pool: PgPool) {
+        seed_chore(&pool, "First", 100).await;
+        seed_chore(&pool, "Second", 150).await;
+
+        let query = ListChoresQuery {
+            page: 0,
+            per_page: 50,
+            description: None,
+        };
+        let page = list_chores(&pool, query).await.unwrap();
+        assert_eq!(page.chores.len(), 2);
+        assert_eq!(page.total, 2);
     }
 
     #[sqlx::test(migrations = "../../migrations")]
