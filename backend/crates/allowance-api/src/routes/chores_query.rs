@@ -103,7 +103,7 @@ mod tests {
         (status, json)
     }
 
-    use allowance_test_helpers::{seed_chore, seed_inactive_chore};
+    use allowance_test_helpers::{seed_chore, seed_chore_with_recurrence, seed_inactive_chore};
 
     #[sqlx::test(migrations = "../../migrations")]
     async fn get_chores_includes_inactive_chores(pool: PgPool) {
@@ -121,6 +121,21 @@ mod tests {
             .find(|item| item["description"] == json!("Retired chore"))
             .expect("inactive chore should still be returned");
         assert_eq!(retired["is_active"], json!(false));
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn get_chores_returns_recurrence_cron_for_recurring_chore(pool: PgPool) {
+        // Biweekly (not a `@`-named cron alias) is the variant most likely to drift
+        // out of sync between the repo and API's independent `recurrence_to_cron`
+        // implementations, per gh-19.
+        seed_chore_with_recurrence(&pool, "Take out trash", 100, "0 0 1,15 * *").await;
+
+        let (status, body) = get_json(app(pool), "/api/v1/chores").await;
+
+        assert_eq!(status, StatusCode::OK);
+        let items = body["items"].as_array().unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0]["recurrence_cron"], json!("0 0 1,15 * *"));
     }
 
     #[sqlx::test(migrations = "../../migrations")]

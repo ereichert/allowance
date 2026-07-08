@@ -21,33 +21,49 @@ pub async fn seed_person(pool: &PgPool, name: &str) -> Uuid {
     insert_person(pool, name, "Child").await
 }
 
-/// Lets tests control `is_active` directly, since GET /chores intentionally includes
-/// deactivated chores (see gh-18) and both states need to be seedable.
+/// Lets tests control `is_active` and `recurrence_cron` directly, since GET /chores
+/// intentionally includes deactivated chores (see gh-18) and must also map a set
+/// recurrence through `recurrence_to_cron` (see gh-19); both need to be seedable.
 pub async fn insert_chore(
     pool: &PgPool,
     description: &str,
     value_cents: i64,
     is_active: bool,
+    recurrence_cron: Option<&str>,
 ) -> Uuid {
     sqlx::query_scalar::<_, Uuid>(
-        "INSERT INTO chores (description, value_cents, is_active) VALUES ($1, $2, $3) RETURNING id",
+        "INSERT INTO chores (description, value_cents, is_active, recurrence_cron) VALUES ($1, $2, $3, $4) RETURNING id",
     )
     .bind(description)
     .bind(value_cents)
     .bind(is_active)
+    .bind(recurrence_cron)
     .fetch_one(pool)
     .await
     .unwrap()
 }
 
-/// Covers the common case (most fixtures just need an active chore) so call sites
-/// don't repeat the active-state argument.
+/// Covers the common case (most fixtures just need an active, non-recurring chore)
+/// so call sites don't repeat the active-state and recurrence arguments.
 pub async fn seed_chore(pool: &PgPool, description: &str, value_cents: i64) -> Uuid {
-    insert_chore(pool, description, value_cents, true).await
+    insert_chore(pool, description, value_cents, true, None).await
 }
 
 /// Lets tests exercise the intentional inclusion of deactivated chores in list
 /// results (gh-18) without every caller passing `is_active` explicitly.
 pub async fn seed_inactive_chore(pool: &PgPool, description: &str, value_cents: i64) -> Uuid {
-    insert_chore(pool, description, value_cents, false).await
+    insert_chore(pool, description, value_cents, false, None).await
+}
+
+/// Lets tests exercise a chore with a recurrence set, since the non-null branch of
+/// `recurrence_cron` mapping is otherwise never seeded (see gh-19). Takes the raw
+/// cron string so callers can assert against either hand-written `recurrence_to_cron`
+/// implementation without this helper depending on either one.
+pub async fn seed_chore_with_recurrence(
+    pool: &PgPool,
+    description: &str,
+    value_cents: i64,
+    recurrence_cron: &str,
+) -> Uuid {
+    insert_chore(pool, description, value_cents, true, Some(recurrence_cron)).await
 }
