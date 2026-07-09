@@ -1,18 +1,16 @@
 /// Table listing chores with the properties a household cares about, omitting internal record-keeping fields (ID, timestamps).
 
 import type { ChoreListItem } from '../types/chore'
+import { formatValue } from '../utils/currency'
 import { AssigneeIndicator } from './AssigneeIndicator'
 import './ChoresTable.css'
 
 interface ChoresTableProps {
   chores: ChoreListItem[]
+  onRowClick: (chore: ChoreListItem) => void
 }
 
-function formatValue(cents: number): string {
-  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
-}
-
-export function ChoresTable({ chores }: ChoresTableProps) {
+export function ChoresTable({ chores, onRowClick }: ChoresTableProps) {
   return (
     <div className="chores-table__scroll">
       <table className="chores-table">
@@ -34,7 +32,11 @@ export function ChoresTable({ chores }: ChoresTableProps) {
             </tr>
           ) : (
             chores.map((chore) => (
-              <tr key={chore.id}>
+              <tr
+                key={chore.id}
+                className="chores-table__row--clickable"
+                onClick={() => onRowClick(chore)}
+              >
                 <td>{chore.description}</td>
                 <td>{formatValue(chore.value_cents)}</td>
                 <td>{chore.recurrence_cron ?? 'One-time'}</td>

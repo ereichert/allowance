@@ -1,0 +1,56 @@
+.chore-detail-panel {
+  position: fixed;
+  top: 56px;
+  right: 0;
+  bottom: 0;
+  width: 340px;
+  max-width: 90vw;
+  overflow-y: auto;
+  background: var(--color-white);
+  border-left: 1px solid var(--color-border);
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  padding: 24px;
+  z-index: 10;
+}
+
+.chore-detail-panel__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-navy);
+  border-radius: 50%;
+  background: var(--color-white);
+  color: var(--color-navy);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chore-detail-panel__title {
+  margin: 0 32px 16px 0;
+  font-size: 1.1rem;
+  color: var(--color-navy);
+}
+
+.chore-detail-panel__fields {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.chore-detail-panel__fields dt {
+  color: var(--color-navy);
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+.chore-detail-panel__fields dd {
+  margin: 4px 0 0;
+  color: var(--color-body-text);
+}
+
+.chore-detail-panel__assignees {
+  margin: 0;
+  padding-left: 1.2em;
+}
