@@ -31,7 +31,8 @@
       "Bash(head *)",
       "Bash(tail *)",
       "Bash(wc *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "mcp__playwright__*"
     ]
   },
   "hooks": {
