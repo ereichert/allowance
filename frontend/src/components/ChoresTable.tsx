@@ -1,18 +1,16 @@
 /// Table listing chores with the properties a household cares about, omitting internal record-keeping fields (ID, timestamps).
 
 import type { ChoreListItem } from '../types/chore'
+import { formatValue } from '../utils/currency'
 import { AssigneeIndicator } from './AssigneeIndicator'
 import './ChoresTable.css'
 
 interface ChoresTableProps {
   chores: ChoreListItem[]
+  onRowClick: (chore: ChoreListItem) => void
 }
 
-function formatValue(cents: number): string {
-  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
-}
-
-export function ChoresTable({ chores }: ChoresTableProps) {
+export function ChoresTable({ chores, onRowClick }: ChoresTableProps) {
   return (
     <div className="chores-table__scroll">
       <table className="chores-table">
@@ -34,7 +32,22 @@ export function ChoresTable({ chores }: ChoresTableProps) {
             </tr>
           ) : (
             chores.map((chore) => (
-              <tr key={chore.id}>
+              <tr
+                key={chore.id}
+                className="chores-table__row--clickable"
+                tabIndex={0}
+                onClick={() => onRowClick(chore)}
+                onKeyDown={(event) => {
+                  // AssigneeIndicator nests its own focusable badge inside the
+                  // row; only treat Enter/Space as "open this row" when the
+                  // row itself — not a descendant — is the focused target.
+                  if (event.target !== event.currentTarget) return
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    onRowClick(chore)
+                  }
+                }}
+              >
                 <td>{chore.description}</td>
                 <td>{formatValue(chore.value_cents)}</td>
                 <td>{chore.recurrence_cron ?? 'One-time'}</td>

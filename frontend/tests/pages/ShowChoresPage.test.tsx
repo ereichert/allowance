@@ -4,10 +4,22 @@ import { MemoryRouter, useSearchParams } from 'react-router-dom'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { ShowChoresPage } from '../../src/pages/ShowChoresPage'
 import * as hooks from '../../src/hooks/useChores'
+import type { ChoreListItem } from '../../src/types/chore'
 
 vi.mock('../../src/hooks/useChores')
 
 const mockUseChores = vi.mocked(hooks.useChores)
+
+const sampleChore: ChoreListItem = {
+  id: 'c1',
+  description: 'Take out trash',
+  value_cents: 100,
+  recurrence_cron: null,
+  is_active: true,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+  assignees: [],
+}
 
 function makeChoresHook(overrides: Partial<ReturnType<typeof hooks.useChores>> = {}) {
   return {
@@ -158,5 +170,41 @@ describe('ShowChoresPage', () => {
     mockUseChores.mockReturnValue(makeChoresHook({ totalPages: 2 }))
     renderShowChoresPage('/chores?page=99')
     expect(screen.getByTestId('search-params')).not.toHaveTextContent('page=')
+  })
+
+  it('does not show the chore detail panel initially', () => {
+    mockUseChores.mockReturnValue(makeChoresHook({ chores: [sampleChore] }))
+    renderShowChoresPage('/chores')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('opens the chore detail panel with the clicked chore when a row is clicked', async () => {
+    mockUseChores.mockReturnValue(makeChoresHook({ chores: [sampleChore] }))
+    renderShowChoresPage('/chores')
+
+    await userEvent.click(screen.getByRole('row', { name: /take out trash/i }))
+
+    const panel = screen.getByRole('dialog', { name: 'Chore details' })
+    expect(panel).toHaveTextContent('Take out trash')
+  })
+
+  it('closes the chore detail panel when its close button is clicked', async () => {
+    mockUseChores.mockReturnValue(makeChoresHook({ chores: [sampleChore] }))
+    renderShowChoresPage('/chores')
+    await userEvent.click(screen.getByRole('row', { name: /take out trash/i }))
+
+    await userEvent.click(screen.getByRole('button', { name: /close/i }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('closes the chore detail panel when Escape is pressed', async () => {
+    mockUseChores.mockReturnValue(makeChoresHook({ chores: [sampleChore] }))
+    renderShowChoresPage('/chores')
+    await userEvent.click(screen.getByRole('row', { name: /take out trash/i }))
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

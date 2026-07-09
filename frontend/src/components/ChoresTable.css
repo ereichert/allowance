@@ -24,6 +24,17 @@
   font-weight: 500;
 }
 
+.chores-table__row--clickable:hover {
+  background: var(--color-body-bg);
+  cursor: pointer;
+}
+
+.chores-table__row--clickable:focus-visible {
+  background: var(--color-body-bg);
+  outline: 2px solid var(--color-navy);
+  outline-offset: -2px;
+}
+
 .chores-table__empty {
   text-align: center;
   color: var(--color-body-text);
