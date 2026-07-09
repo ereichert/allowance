@@ -3,12 +3,12 @@
 
 import { useEffect, useState } from 'react'
 import { listChores } from '../api/chores'
-import type { Chore } from '../types/chore'
+import type { ChoreListItem } from '../types/chore'
 
 const PER_PAGE = 100
 
 export interface UseChoresReturn {
-  chores: Chore[]
+  chores: ChoreListItem[]
   loading: boolean
   error: string | null
   totalPages: number
@@ -16,7 +16,7 @@ export interface UseChoresReturn {
 
 /** Fetches a page of chores, refetching whenever `page` changes. */
 export function useChores(page: number): UseChoresReturn {
-  const [chores, setChores] = useState<Chore[]>([])
+  const [chores, setChores] = useState<ChoreListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [total, setTotal] = useState(0)

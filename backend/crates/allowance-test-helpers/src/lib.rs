@@ -4,15 +4,16 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 /// Lets tests set up a person with a specific role directly, bypassing the API/service
-/// layers. Binds via a dynamic query because sqlx's compile-time query checking can't
-/// bind custom Postgres enum types.
+/// layers.
 pub async fn insert_person(pool: &PgPool, name: &str, role: &str) -> Uuid {
-    let sql = format!("INSERT INTO people (name, role) VALUES ($1, '{role}'::role) RETURNING id");
-    sqlx::query_scalar::<_, Uuid>(&sql)
-        .bind(name)
-        .fetch_one(pool)
-        .await
-        .unwrap()
+    sqlx::query_scalar::<_, Uuid>(
+        "INSERT INTO people (name, role) VALUES ($1, $2::text::role) RETURNING id",
+    )
+    .bind(name)
+    .bind(role)
+    .fetch_one(pool)
+    .await
+    .unwrap()
 }
 
 /// Covers the common case (most fixtures just need a child) so call sites don't
@@ -66,6 +67,32 @@ pub async fn seed_chore_with_recurrence(
     recurrence_cron: &str,
 ) -> Uuid {
     insert_chore(pool, description, value_cents, true, Some(recurrence_cron)).await
+}
+
+/// Lets tests attach a person to a chore in a specific assignment status, since
+/// assignee listings must include people regardless of status.
+pub async fn insert_assignment(
+    pool: &PgPool,
+    chore_id: Uuid,
+    person_id: Uuid,
+    status: &str,
+) -> Uuid {
+    sqlx::query_scalar::<_, Uuid>(
+        "INSERT INTO chore_assignments (chore_id, person_id, status) \
+         VALUES ($1, $2, $3::text::assignment_status) RETURNING id",
+    )
+    .bind(chore_id)
+    .bind(person_id)
+    .bind(status)
+    .fetch_one(pool)
+    .await
+    .unwrap()
+}
+
+/// Covers the common case (most fixtures just need a pending assignment) so call
+/// sites don't repeat the status argument.
+pub async fn seed_assignment(pool: &PgPool, chore_id: Uuid, person_id: Uuid) -> Uuid {
+    insert_assignment(pool, chore_id, person_id, "Pending").await
 }
 
 /// Bulk-seeds `count` active chores in a single INSERT so pagination tests can seed

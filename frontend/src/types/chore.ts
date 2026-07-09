@@ -16,9 +16,20 @@ export interface CreateChoreRequest {
   assignee_ids?: string[]
 }
 
+/** A person assigned to a chore, as embedded in chore list items. */
+export interface Assignee {
+  id: string
+  name: string
+}
+
+/** A chore as returned by GET /chores: the chore plus its current assignees. */
+export interface ChoreListItem extends Chore {
+  assignees: Assignee[]
+}
+
 /** Paginated envelope returned by GET /chores. */
 export interface ChoresListResponse {
-  items: Chore[]
+  items: ChoreListItem[]
   total: number
   page: number
   per_page: number

@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { listPeople, createChore, listChores } from '../../src/api/chores'
 import type { Person } from '../../src/types/person'
-import type { Chore } from '../../src/types/chore'
+import type { ChoreListItem } from '../../src/types/chore'
 
 const stubPeople: Person[] = [
   { id: 'p1', name: 'Alice', role: 'Child', created_at: '2026-01-01T00:00:00Z' },
@@ -69,7 +69,7 @@ describe('listChores', () => {
     vi.unstubAllGlobals()
   })
 
-  const stubChores: Chore[] = [
+  const stubChores: ChoreListItem[] = [
     {
       id: 'c1',
       description: 'Take out trash',
@@ -78,6 +78,7 @@ describe('listChores', () => {
       is_active: true,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
+      assignees: [],
     },
     {
       id: 'c2',
@@ -87,6 +88,7 @@ describe('listChores', () => {
       is_active: false,
       created_at: '2026-01-02T00:00:00Z',
       updated_at: '2026-01-02T00:00:00Z',
+      assignees: [{ id: 'p1', name: 'Alice' }],
     },
   ]
 

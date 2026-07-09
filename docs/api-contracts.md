@@ -117,6 +117,10 @@ for each person with status `Pending`.
 Returns a paginated list of all chores, active and inactive. Supports
 optional partial description search.
 
+Each item includes `assignees`: the people currently assigned to the chore,
+regardless of assignment status. A person appears at most once per chore even
+if they hold multiple assignment records for it. Sorted by name, ascending.
+
 #### Query parameters
 
 | Parameter     | Type    | Default | Max | Description                                 |
@@ -137,7 +141,11 @@ optional partial description search.
       "recurrence_cron": null,
       "is_active": true,
       "created_at": "2026-04-02T12:00:00Z",
-      "updated_at": "2026-04-02T12:00:00Z"
+      "updated_at": "2026-04-02T12:00:00Z",
+      "assignees": [
+        { "id": "uuid-1", "name": "Alice" },
+        { "id": "uuid-2", "name": "Bob" }
+      ]
     }
   ],
   "total": 1,
