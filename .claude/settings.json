@@ -22,6 +22,7 @@
       "Skill(review-pr:*)",
       "Skill(audit-comments)",
       "Skill(audit-comments:*)",
+      "Bash(.claude/skills/review-pr/scripts/*)",
       "Bash(colima *)",
       "Bash(just *)",
       "Bash(git *)",

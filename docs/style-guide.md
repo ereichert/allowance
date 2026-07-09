@@ -19,7 +19,7 @@
 
 - Library crates (`types`, `domain`, `repo`, `service`): define errors with `thiserror`
 - Binary / top-level (`api`, tests): may use `anyhow` for ad-hoc errors
-- Never use `.unwrap()` in production code (tests are fine)
+- Never use `.unwrap()` or `.expect()` in production code (tests are fine)
 - Prefer `?` propagation over match chains
 
 ### Types
@@ -73,6 +73,7 @@
 - Props defined as named interfaces: `interface ChoreCardProps { ... }`
 - Destructure props in function signature
 - Co-locate component-specific styles
+- Every component rendering hook-fetched API data must handle its loading and error states
 
 ### State Management
 
