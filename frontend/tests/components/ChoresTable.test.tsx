@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { ChoresTable } from '../../src/components/ChoresTable'
-import type { Chore } from '../../src/types/chore'
+import type { ChoreListItem } from '../../src/types/chore'
 
-const stubChores: Chore[] = [
+const stubChores: ChoreListItem[] = [
   {
     id: 'c1',
     description: 'Take out trash',
@@ -12,6 +12,7 @@ const stubChores: Chore[] = [
     is_active: true,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
+    assignees: [],
   },
   {
     id: 'c2',
@@ -21,6 +22,10 @@ const stubChores: Chore[] = [
     is_active: false,
     created_at: '2026-01-02T00:00:00Z',
     updated_at: '2026-01-03T00:00:00Z',
+    assignees: [
+      { id: 'p1', name: 'Alice' },
+      { id: 'p2', name: 'Bob' },
+    ],
   },
 ]
 
@@ -33,9 +38,16 @@ describe('ChoresTable', () => {
 
   it('renders a column header for each chore property', () => {
     render(<ChoresTable chores={stubChores} />)
-    for (const name of ['Description', 'Value', 'Recurrence', 'Active']) {
+    for (const name of ['Description', 'Value', 'Recurrence', 'Active', 'Assignees']) {
       expect(screen.getByRole('columnheader', { name })).toBeInTheDocument()
     }
+  })
+
+  it('renders an assignee indicator for each chore', () => {
+    render(<ChoresTable chores={stubChores} />)
+    expect(screen.getAllByLabelText(/assignees/i)).toHaveLength(2)
+    expect(screen.getByText('0')).toBeInTheDocument()
+    expect(screen.getByText('M')).toBeInTheDocument()
   })
 
   it('formats value_cents as currency', () => {

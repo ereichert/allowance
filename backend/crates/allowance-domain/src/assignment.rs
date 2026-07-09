@@ -31,6 +31,15 @@ pub struct ChoreAssignment {
     pub created_at: DateTime<Utc>,
 }
 
+/// A person currently assigned to a chore, as shown in chore listings.
+/// Derived from assignment records: one entry per distinct person,
+/// regardless of assignment status.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChoreAssignee {
+    pub id: PersonId,
+    pub name: String,
+}
+
 /// Input for creating a new chore assignment.
 #[derive(Debug, Clone)]
 pub struct NewChoreAssignment {

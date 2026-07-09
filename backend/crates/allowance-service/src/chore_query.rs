@@ -1,6 +1,6 @@
 //! Read-path service operations for listing chores.
 
-use allowance_domain::Chore;
+use allowance_domain::{Chore, ChoreAssignee, ChoreId};
 use sqlx::PgPool;
 
 use crate::error::ServiceError;
@@ -14,8 +14,14 @@ pub struct ListChoresQuery {
 }
 
 #[derive(Debug)]
+pub struct ChoreWithAssignees {
+    pub chore: Chore,
+    pub assignees: Vec<ChoreAssignee>,
+}
+
+#[derive(Debug)]
 pub struct ChoresPage {
-    pub chores: Vec<Chore>,
+    pub chores: Vec<ChoreWithAssignees>,
     pub total: i64,
 }
 
@@ -35,13 +41,27 @@ pub async fn list_chores(
     let total =
         allowance_repo::chore_query::count_chores(pool, query.description.as_deref()).await?;
 
+    let chore_ids: Vec<ChoreId> = chores.iter().map(|c| c.id).collect();
+    let mut assignees_by_chore =
+        allowance_repo::chore_query::list_assignees_for_chores(pool, &chore_ids).await?;
+
+    let chores = chores
+        .into_iter()
+        .map(|chore| {
+            let assignees = assignees_by_chore.remove(&chore.id).unwrap_or_default();
+            ChoreWithAssignees { chore, assignees }
+        })
+        .collect();
+
     Ok(ChoresPage { chores, total })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use allowance_test_helpers::{seed_chore, seed_inactive_chore, seed_many_chores};
+    use allowance_test_helpers::{
+        seed_assignment, seed_chore, seed_inactive_chore, seed_many_chores, seed_person,
+    };
     use sqlx::PgPool;
 
     fn default_query() -> ListChoresQuery {
@@ -73,9 +93,9 @@ mod tests {
         let retired = page
             .chores
             .iter()
-            .find(|c| c.description == "Retired chore")
+            .find(|c| c.chore.description == "Retired chore")
             .expect("inactive chore should still be returned");
-        assert!(!retired.is_active);
+        assert!(!retired.chore.is_active);
     }
 
     #[sqlx::test(migrations = "../../migrations")]
@@ -91,7 +111,7 @@ mod tests {
         let page = list_chores(&pool, query).await.unwrap();
         assert_eq!(page.chores.len(), 1);
         assert_eq!(page.total, 1);
-        assert_eq!(page.chores[0].description, "Take out trash");
+        assert_eq!(page.chores[0].chore.description, "Take out trash");
     }
 
     #[sqlx::test(migrations = "../../migrations")]
@@ -121,6 +141,56 @@ mod tests {
         let page = list_chores(&pool, query).await.unwrap();
         assert_eq!(page.chores.len(), 2);
         assert_eq!(page.total, 2);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn list_chores_attaches_assignees_sorted_by_name(pool: PgPool) {
+        let chore = seed_chore(&pool, "Sweep porch", 100).await;
+        let bob = seed_person(&pool, "Bob").await;
+        let alice = seed_person(&pool, "Alice").await;
+        seed_assignment(&pool, chore, bob).await;
+        seed_assignment(&pool, chore, alice).await;
+
+        let page = list_chores(&pool, default_query()).await.unwrap();
+
+        let names: Vec<&str> = page.chores[0]
+            .assignees
+            .iter()
+            .map(|a| a.name.as_str())
+            .collect();
+        assert_eq!(names, vec!["Alice", "Bob"]);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn list_chores_returns_empty_assignees_for_unassigned_chore(pool: PgPool) {
+        seed_chore(&pool, "Sweep porch", 100).await;
+
+        let page = list_chores(&pool, default_query()).await.unwrap();
+
+        assert!(page.chores[0].assignees.is_empty());
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn list_chores_attaches_assignees_to_the_matching_chore(pool: PgPool) {
+        let sweep = seed_chore(&pool, "Sweep porch", 100).await;
+        seed_chore(&pool, "Wash dishes", 150).await;
+        let alice = seed_person(&pool, "Alice").await;
+        seed_assignment(&pool, sweep, alice).await;
+
+        let page = list_chores(&pool, default_query()).await.unwrap();
+
+        let sweep_item = page
+            .chores
+            .iter()
+            .find(|c| c.chore.description == "Sweep porch")
+            .unwrap();
+        let wash_item = page
+            .chores
+            .iter()
+            .find(|c| c.chore.description == "Wash dishes")
+            .unwrap();
+        assert_eq!(sweep_item.assignees[0].name, "Alice");
+        assert!(wash_item.assignees.is_empty());
     }
 
     #[sqlx::test(migrations = "../../migrations")]

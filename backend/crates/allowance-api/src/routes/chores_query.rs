@@ -10,14 +10,28 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct ChoreQueryParams {
     pub page: Option<i64>,
     pub per_page: Option<i64>,
     pub description: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AssigneeResponse {
+    pub id: Uuid,
+    pub name: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ChoreListItemResponse {
+    #[serde(flatten)]
+    pub chore: ChoreResponse,
+    pub assignees: Vec<AssigneeResponse>,
 }
 
 /// `GET /api/v1/chores` — list all chores with optional description search and pagination.
@@ -39,17 +53,27 @@ pub async fn get_chores(
     .await
     .map_err(ApiError::from)?;
 
-    let items: Vec<ChoreResponse> = result
+    let items: Vec<ChoreListItemResponse> = result
         .chores
         .into_iter()
-        .map(|c| ChoreResponse {
-            id: c.id.0,
-            description: c.description,
-            value_cents: c.value_cents,
-            recurrence_cron: c.recurrence.as_ref().map(recurrence_to_cron),
-            is_active: c.is_active,
-            created_at: c.created_at,
-            updated_at: c.updated_at,
+        .map(|item| ChoreListItemResponse {
+            chore: ChoreResponse {
+                id: item.chore.id.0,
+                description: item.chore.description,
+                value_cents: item.chore.value_cents,
+                recurrence_cron: item.chore.recurrence.as_ref().map(recurrence_to_cron),
+                is_active: item.chore.is_active,
+                created_at: item.chore.created_at,
+                updated_at: item.chore.updated_at,
+            },
+            assignees: item
+                .assignees
+                .into_iter()
+                .map(|a| AssigneeResponse {
+                    id: a.id.0,
+                    name: a.name,
+                })
+                .collect(),
         })
         .collect();
 
@@ -103,7 +127,9 @@ mod tests {
         (status, json)
     }
 
-    use allowance_test_helpers::{seed_chore, seed_chore_with_recurrence, seed_inactive_chore};
+    use allowance_test_helpers::{
+        seed_assignment, seed_chore, seed_chore_with_recurrence, seed_inactive_chore, seed_person,
+    };
 
     #[sqlx::test(migrations = "../../migrations")]
     async fn get_chores_includes_inactive_chores(pool: PgPool) {
@@ -172,6 +198,51 @@ mod tests {
         let items = body["items"].as_array().unwrap();
         assert_eq!(items.len(), 1);
         assert_eq!(items[0]["description"], json!("Take out trash"));
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn get_chores_includes_assignees_with_id_and_name(pool: PgPool) {
+        let chore = seed_chore(&pool, "Sweep porch", 100).await;
+        let alice = seed_person(&pool, "Alice").await;
+        seed_assignment(&pool, chore, alice).await;
+
+        let (status, body) = get_json(app(pool), "/api/v1/chores").await;
+
+        assert_eq!(status, StatusCode::OK);
+        let assignees = body["items"][0]["assignees"].as_array().unwrap();
+        assert_eq!(assignees.len(), 1);
+        assert_eq!(assignees[0]["id"], json!(alice.to_string()));
+        assert_eq!(assignees[0]["name"], json!("Alice"));
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn get_chores_returns_empty_assignees_for_unassigned_chore(pool: PgPool) {
+        seed_chore(&pool, "Sweep porch", 100).await;
+
+        let (status, body) = get_json(app(pool), "/api/v1/chores").await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["items"][0]["assignees"], json!([]));
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn get_chores_sorts_assignees_by_name(pool: PgPool) {
+        let chore = seed_chore(&pool, "Sweep porch", 100).await;
+        let bob = seed_person(&pool, "Bob").await;
+        let alice = seed_person(&pool, "Alice").await;
+        seed_assignment(&pool, chore, bob).await;
+        seed_assignment(&pool, chore, alice).await;
+
+        let (status, body) = get_json(app(pool), "/api/v1/chores").await;
+
+        assert_eq!(status, StatusCode::OK);
+        let names: Vec<&str> = body["items"][0]["assignees"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a["name"].as_str().unwrap())
+            .collect();
+        assert_eq!(names, vec!["Alice", "Bob"]);
     }
 
     #[sqlx::test(migrations = "../../migrations")]
