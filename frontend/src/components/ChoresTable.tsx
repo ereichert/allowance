@@ -8,9 +8,10 @@ import './ChoresTable.css'
 interface ChoresTableProps {
   chores: ChoreListItem[]
   onRowClick: (chore: ChoreListItem) => void
+  onCloseDetail: () => void
 }
 
-export function ChoresTable({ chores, onRowClick }: ChoresTableProps) {
+export function ChoresTable({ chores, onRowClick, onCloseDetail }: ChoresTableProps) {
   return (
     <div className="chores-table__scroll">
       <table className="chores-table">
@@ -39,12 +40,28 @@ export function ChoresTable({ chores, onRowClick }: ChoresTableProps) {
                 onClick={() => onRowClick(chore)}
                 onKeyDown={(event) => {
                   // AssigneeIndicator nests its own focusable badge inside the
-                  // row; only treat Enter/Space as "open this row" when the
+                  // row; only handle keys as row-level navigation when the
                   // row itself — not a descendant — is the focused target.
                   if (event.target !== event.currentTarget) return
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault()
-                    onRowClick(chore)
+                  switch (event.key) {
+                    case 'Enter':
+                    case ' ':
+                    case 'ArrowRight':
+                      event.preventDefault()
+                      onRowClick(chore)
+                      break
+                    case 'ArrowLeft':
+                      event.preventDefault()
+                      onCloseDetail()
+                      break
+                    case 'ArrowDown':
+                      event.preventDefault()
+                      ;(event.currentTarget.nextElementSibling as HTMLElement | null)?.focus()
+                      break
+                    case 'ArrowUp':
+                      event.preventDefault()
+                      ;(event.currentTarget.previousElementSibling as HTMLElement | null)?.focus()
+                      break
                   }
                 }}
               >

@@ -207,4 +207,27 @@ describe('ShowChoresPage', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
+
+  it('opens the chore detail panel when Right is pressed on a focused row', async () => {
+    mockUseChores.mockReturnValue(makeChoresHook({ chores: [sampleChore] }))
+    renderShowChoresPage('/chores')
+    screen.getByRole('row', { name: /take out trash/i }).focus()
+
+    await userEvent.keyboard('{ArrowRight}')
+
+    const panel = screen.getByRole('dialog', { name: 'Chore details' })
+    expect(panel).toHaveTextContent('Take out trash')
+  })
+
+  it('closes the chore detail panel when Left is pressed on a focused row', async () => {
+    mockUseChores.mockReturnValue(makeChoresHook({ chores: [sampleChore] }))
+    renderShowChoresPage('/chores')
+    screen.getByRole('row', { name: /take out trash/i }).focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(screen.getByRole('dialog', { name: 'Chore details' })).toBeInTheDocument()
+
+    await userEvent.keyboard('{ArrowLeft}')
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
 })
