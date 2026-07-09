@@ -34,13 +34,21 @@ export function ShowChoresPage() {
     setSelectedChoreId(chore.id)
   }
 
+  function handleCloseDetail() {
+    setSelectedChoreId(null)
+  }
+
   function renderBody() {
     if (loading || isInvalidPage) return <p>Loading chores…</p>
     if (error) return null
 
     return (
       <>
-        <ChoresTable chores={chores} onRowClick={handleRowClick} />
+        <ChoresTable
+          chores={chores}
+          onRowClick={handleRowClick}
+          onCloseDetail={handleCloseDetail}
+        />
         <div className="show-chores-page__pagination">
           <button type="button" onClick={() => goToPage(page - 1)} disabled={page <= 1}>
             Previous
@@ -60,7 +68,7 @@ export function ShowChoresPage() {
     <div className="show-chores-page">
       <StatusMessage status={error ? 'error' : 'idle'} message={error} />
       {renderBody()}
-      <ChoreDetailPanel chore={selectedChore} onClose={() => setSelectedChoreId(null)} />
+      <ChoreDetailPanel chore={selectedChore} onClose={handleCloseDetail} />
     </div>
   )
 }
