@@ -32,10 +32,6 @@
       "Bash(tail *)",
       "Bash(wc *)",
       "Bash(grep *)"
-    ],
-    "additionalDirectories": [
-      "/Users/ereichert/dev/allowance/.claude",
-      "/Users/ereichert/dev/allowance/.claude/skills"
     ]
   },
   "hooks": {
@@ -56,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/ereichert/dev/allowance && git diff --quiet -- backend/ frontend/ && git diff --cached --quiet -- backend/ frontend/ || just test"
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && git diff --quiet -- backend/ frontend/ && git diff --cached --quiet -- backend/ frontend/ || just test"
           }
         ]
       }
