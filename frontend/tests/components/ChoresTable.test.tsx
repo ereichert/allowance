@@ -113,4 +113,52 @@ describe('ChoresTable', () => {
       'chores-table__row--clickable',
     )
   })
+
+  it('puts chore rows in the tab order', () => {
+    render(<ChoresTable chores={stubChores} onRowClick={noop} />)
+    expect(screen.getByRole('row', { name: /take out trash/i })).toHaveAttribute('tabindex', '0')
+  })
+
+  it('calls onRowClick when Enter is pressed on a focused row', async () => {
+    const onRowClick = vi.fn()
+    render(<ChoresTable chores={stubChores} onRowClick={onRowClick} />)
+    screen.getByRole('row', { name: /take out trash/i }).focus()
+
+    await userEvent.keyboard('{Enter}')
+
+    expect(onRowClick).toHaveBeenCalledWith(stubChores[0])
+  })
+
+  it('calls onRowClick when Space is pressed on a focused row', async () => {
+    const onRowClick = vi.fn()
+    render(<ChoresTable chores={stubChores} onRowClick={onRowClick} />)
+    screen.getByRole('row', { name: /take out trash/i }).focus()
+
+    await userEvent.keyboard(' ')
+
+    expect(onRowClick).toHaveBeenCalledWith(stubChores[0])
+  })
+
+  it('does not call onRowClick when an unrelated key is pressed on a focused row', async () => {
+    const onRowClick = vi.fn()
+    render(<ChoresTable chores={stubChores} onRowClick={onRowClick} />)
+    screen.getByRole('row', { name: /take out trash/i }).focus()
+
+    await userEvent.keyboard('a')
+
+    expect(onRowClick).not.toHaveBeenCalled()
+  })
+
+  it('does not call onRowClick when Enter is pressed on the nested assignee indicator', async () => {
+    const onRowClick = vi.fn()
+    render(<ChoresTable chores={stubChores} onRowClick={onRowClick} />)
+
+    await userEvent.tab()
+    await userEvent.tab()
+    expect(screen.getAllByLabelText(/assignees/i)[0]).toHaveFocus()
+
+    await userEvent.keyboard('{Enter}')
+
+    expect(onRowClick).not.toHaveBeenCalled()
+  })
 })

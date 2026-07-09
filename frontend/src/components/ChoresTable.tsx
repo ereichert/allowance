@@ -35,7 +35,18 @@ export function ChoresTable({ chores, onRowClick }: ChoresTableProps) {
               <tr
                 key={chore.id}
                 className="chores-table__row--clickable"
+                tabIndex={0}
                 onClick={() => onRowClick(chore)}
+                onKeyDown={(event) => {
+                  // AssigneeIndicator nests its own focusable badge inside the
+                  // row; only treat Enter/Space as "open this row" when the
+                  // row itself — not a descendant — is the focused target.
+                  if (event.target !== event.currentTarget) return
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    onRowClick(chore)
+                  }
+                }}
               >
                 <td>{chore.description}</td>
                 <td>{formatValue(chore.value_cents)}</td>
