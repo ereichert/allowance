@@ -10,25 +10,6 @@ use uuid::Uuid;
 
 use crate::error::RepoError;
 
-/// Canonical cron expressions for named recurrence variants.
-/// `Custom` stores its expression directly; all others use these sentinels.
-const CRON_DAILY: &str = "@daily";
-const CRON_WEEKLY: &str = "@weekly";
-const CRON_BIWEEKLY: &str = "0 0 1,15 * *";
-const CRON_MONTHLY: &str = "@monthly";
-
-/// Convert a stored cron string back to a `Recurrence` variant.
-/// Unrecognized expressions are treated as `Custom`.
-fn cron_to_recurrence(cron: &str) -> Recurrence {
-    match cron {
-        CRON_DAILY => Recurrence::Daily,
-        CRON_WEEKLY => Recurrence::Weekly,
-        CRON_BIWEEKLY => Recurrence::Biweekly,
-        CRON_MONTHLY => Recurrence::Monthly,
-        other => Recurrence::Custom(other.to_string()),
-    }
-}
-
 pub(crate) struct ChoreRow {
     pub(crate) id: Uuid,
     pub(crate) description: String,
@@ -41,7 +22,7 @@ pub(crate) struct ChoreRow {
 
 impl From<ChoreRow> for Chore {
     fn from(row: ChoreRow) -> Self {
-        let recurrence = row.recurrence_cron.as_deref().map(cron_to_recurrence);
+        let recurrence = row.recurrence_cron.as_deref().map(Recurrence::from_cron);
         Chore {
             id: ChoreId(row.id),
             description: row.description,
@@ -175,67 +156,7 @@ mod tests {
     use super::*;
     use sqlx::PgPool;
 
-    /// Write direction of the cron conversion — only needed in tests for round-trip assertions.
-    fn recurrence_to_cron(r: &Recurrence) -> String {
-        match r {
-            Recurrence::Daily => CRON_DAILY.to_string(),
-            Recurrence::Weekly => CRON_WEEKLY.to_string(),
-            Recurrence::Biweekly => CRON_BIWEEKLY.to_string(),
-            Recurrence::Monthly => CRON_MONTHLY.to_string(),
-            Recurrence::Custom(expr) => expr.clone(),
-        }
-    }
-
     use allowance_test_helpers::seed_person;
-
-    #[test]
-    fn daily_round_trips_through_cron() {
-        assert_eq!(
-            cron_to_recurrence(&recurrence_to_cron(&Recurrence::Daily)),
-            Recurrence::Daily
-        );
-    }
-
-    #[test]
-    fn weekly_round_trips_through_cron() {
-        assert_eq!(
-            cron_to_recurrence(&recurrence_to_cron(&Recurrence::Weekly)),
-            Recurrence::Weekly
-        );
-    }
-
-    #[test]
-    fn biweekly_round_trips_through_cron() {
-        assert_eq!(
-            cron_to_recurrence(&recurrence_to_cron(&Recurrence::Biweekly)),
-            Recurrence::Biweekly
-        );
-    }
-
-    #[test]
-    fn monthly_round_trips_through_cron() {
-        assert_eq!(
-            cron_to_recurrence(&recurrence_to_cron(&Recurrence::Monthly)),
-            Recurrence::Monthly
-        );
-    }
-
-    #[test]
-    fn custom_round_trips_through_cron() {
-        let expr = "0 9 * * 1-5";
-        assert_eq!(
-            cron_to_recurrence(&recurrence_to_cron(&Recurrence::Custom(expr.to_string()))),
-            Recurrence::Custom(expr.to_string()),
-        );
-    }
-
-    #[test]
-    fn unknown_cron_string_becomes_custom() {
-        assert_eq!(
-            cron_to_recurrence("5 4 * * sun"),
-            Recurrence::Custom("5 4 * * sun".to_string()),
-        );
-    }
 
     fn new_chore(description: &str, value_cents: Option<i64>) -> NewChore {
         NewChore::new(description, value_cents, None)

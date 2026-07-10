@@ -1,8 +1,9 @@
 //! Handler for listing chores.
 
-use super::chores::{recurrence_to_cron, ChoreResponse};
+use super::chores::ChoreResponse;
 use super::ApiError;
 use super::PaginatedResponse;
+use allowance_domain::Recurrence;
 use allowance_service::chore_query::{list_chores, ListChoresQuery};
 use axum::{
     extract::{Query, State},
@@ -61,7 +62,7 @@ pub async fn get_chores(
                 id: item.chore.id.0,
                 description: item.chore.description,
                 value_cents: item.chore.value_cents,
-                recurrence_cron: item.chore.recurrence.as_ref().map(recurrence_to_cron),
+                recurrence_cron: item.chore.recurrence.as_ref().map(Recurrence::to_cron),
                 is_active: item.chore.is_active,
                 created_at: item.chore.created_at,
                 updated_at: item.chore.updated_at,
