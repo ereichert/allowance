@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
-import { listPeople, createChore, listChores } from '../../src/api/chores'
+import { listPeople, createChore, listChores, updateChore } from '../../src/api/chores'
 import type { Person } from '../../src/types/person'
 import type { ChoreListItem } from '../../src/types/chore'
 
@@ -61,6 +61,45 @@ describe('createChore', () => {
     const result = await createChore({ description: 'Take out trash', value_cents: 100 })
 
     expect(result).toEqual(stubChore)
+  })
+})
+
+describe('updateChore', () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('puts to /chores/:id and returns the updated chore', async () => {
+    const stubChore: ChoreListItem = {
+      id: 'c1',
+      description: 'Sweep back porch',
+      value_cents: 250,
+      recurrence_cron: null,
+      is_active: false,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-02T00:00:00Z',
+      assignees: [],
+    }
+    const fetchSpy = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(stubChore),
+    })
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const result = await updateChore('c1', {
+      description: 'Sweep back porch',
+      value_cents: 250,
+      is_active: false,
+      recurrence_cron: null,
+      assignee_ids: [],
+    })
+
+    expect(result).toEqual(stubChore)
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/chores/c1'),
+      expect.objectContaining({ method: 'PUT' }),
+    )
   })
 })
 

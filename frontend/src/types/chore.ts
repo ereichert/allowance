@@ -16,6 +16,15 @@ export interface CreateChoreRequest {
   assignee_ids?: string[]
 }
 
+/** Input for updating a chore. A full replace: every field must be sent. */
+export interface UpdateChoreRequest {
+  description: string
+  value_cents: number
+  is_active: boolean
+  recurrence_cron: string | null
+  assignee_ids: string[]
+}
+
 /** A person assigned to a chore, as embedded in chore list items. */
 export interface Assignee {
   id: string

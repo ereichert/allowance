@@ -27,6 +27,7 @@ function makeChoresHook(overrides: Partial<ReturnType<typeof hooks.useChores>> =
     loading: false,
     error: null,
     totalPages: 1,
+    refetch: vi.fn(),
     ...overrides,
   }
 }

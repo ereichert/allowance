@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor, act } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { useChores } from '../../src/hooks/useChores'
 import * as choreApi from '../../src/api/chores'
@@ -100,5 +100,33 @@ describe('useChores', () => {
     expect(result.current.loading).toBe(true)
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(mockListChores).toHaveBeenLastCalledWith(2, 100)
+  })
+
+  it('refetch re-invokes listChores with the same page', async () => {
+    mockListChores.mockResolvedValueOnce(makeResponse())
+    const { result } = renderHook(() => useChores(1))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    mockListChores.mockResolvedValueOnce(makeResponse())
+    act(() => {
+      result.current.refetch()
+    })
+
+    await waitFor(() => expect(mockListChores).toHaveBeenCalledTimes(2))
+    expect(mockListChores).toHaveBeenLastCalledWith(1, 100)
+  })
+
+  it('refetch does not show the loading state', async () => {
+    mockListChores.mockResolvedValueOnce(makeResponse())
+    const { result } = renderHook(() => useChores(1))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    mockListChores.mockResolvedValueOnce(makeResponse())
+    act(() => {
+      result.current.refetch()
+    })
+
+    expect(result.current.loading).toBe(false)
+    await waitFor(() => expect(mockListChores).toHaveBeenCalledTimes(2))
   })
 })
