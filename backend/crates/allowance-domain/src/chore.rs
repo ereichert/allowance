@@ -19,6 +19,33 @@ pub enum Recurrence {
     Custom(String),
 }
 
+impl Recurrence {
+    const CRON_DAILY: &'static str = "@daily";
+    const CRON_WEEKLY: &'static str = "@weekly";
+    const CRON_BIWEEKLY: &'static str = "0 0 1,15 * *";
+    const CRON_MONTHLY: &'static str = "@monthly";
+
+    pub fn to_cron(&self) -> String {
+        match self {
+            Recurrence::Daily => Self::CRON_DAILY.to_string(),
+            Recurrence::Weekly => Self::CRON_WEEKLY.to_string(),
+            Recurrence::Biweekly => Self::CRON_BIWEEKLY.to_string(),
+            Recurrence::Monthly => Self::CRON_MONTHLY.to_string(),
+            Recurrence::Custom(expr) => expr.clone(),
+        }
+    }
+
+    pub fn from_cron(cron: &str) -> Self {
+        match cron {
+            Self::CRON_DAILY => Recurrence::Daily,
+            Self::CRON_WEEKLY => Recurrence::Weekly,
+            Self::CRON_BIWEEKLY => Recurrence::Biweekly,
+            Self::CRON_MONTHLY => Recurrence::Monthly,
+            other => Recurrence::Custom(other.to_string()),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Chore {
     pub id: ChoreId,
@@ -146,5 +173,54 @@ mod tests {
         assert!(NewChore::new("Water plants", Some(0), None)
             .validate()
             .is_ok());
+    }
+
+    #[test]
+    fn daily_round_trips_through_cron() {
+        assert_eq!(
+            Recurrence::from_cron(&Recurrence::Daily.to_cron()),
+            Recurrence::Daily
+        );
+    }
+
+    #[test]
+    fn weekly_round_trips_through_cron() {
+        assert_eq!(
+            Recurrence::from_cron(&Recurrence::Weekly.to_cron()),
+            Recurrence::Weekly
+        );
+    }
+
+    #[test]
+    fn biweekly_round_trips_through_cron() {
+        assert_eq!(
+            Recurrence::from_cron(&Recurrence::Biweekly.to_cron()),
+            Recurrence::Biweekly
+        );
+    }
+
+    #[test]
+    fn monthly_round_trips_through_cron() {
+        assert_eq!(
+            Recurrence::from_cron(&Recurrence::Monthly.to_cron()),
+            Recurrence::Monthly
+        );
+    }
+
+    #[test]
+    fn custom_round_trips_through_cron() {
+        let expr = "0 9 * * 1-5";
+        assert_eq!(
+            Recurrence::from_cron(&Recurrence::Custom(expr.to_string()).to_cron()),
+            Recurrence::Custom(expr.to_string()),
+        );
+    }
+
+    #[test]
+    fn unknown_cron_string_becomes_custom() {
+        assert_eq!(
+            Recurrence::from_cron("5 4 * * sun"),
+            Recurrence::Custom("5 4 * * sun".to_string()),
+        );
     }
 }

@@ -9,18 +9,6 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-/// Serialize a `Recurrence` variant to its canonical cron string for API responses.
-/// Must stay in sync with the constants in `allowance-repo`.
-pub(crate) fn recurrence_to_cron(r: &Recurrence) -> String {
-    match r {
-        Recurrence::Daily => "@daily".to_string(),
-        Recurrence::Weekly => "@weekly".to_string(),
-        Recurrence::Biweekly => "0 0 1,15 * *".to_string(),
-        Recurrence::Monthly => "@monthly".to_string(),
-        Recurrence::Custom(expr) => expr.clone(),
-    }
-}
-
 #[derive(Debug, Deserialize)]
 pub struct CreateChoreRequest {
     pub description: String,
@@ -56,7 +44,7 @@ pub async fn post_chore(
         id: result.chore.id.0,
         description: result.chore.description,
         value_cents: result.chore.value_cents,
-        recurrence_cron: result.chore.recurrence.as_ref().map(recurrence_to_cron),
+        recurrence_cron: result.chore.recurrence.as_ref().map(Recurrence::to_cron),
         is_active: result.chore.is_active,
         created_at: result.chore.created_at,
         updated_at: result.chore.updated_at,
