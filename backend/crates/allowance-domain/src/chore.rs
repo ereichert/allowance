@@ -77,6 +77,19 @@ pub enum ChoreValidationError {
     NegativeValue(i64),
 }
 
+fn validate_description_and_value(
+    description: &str,
+    value_cents: i64,
+) -> Result<(), ChoreValidationError> {
+    if description.is_empty() {
+        return Err(ChoreValidationError::BlankDescription);
+    }
+    if value_cents < 0 {
+        return Err(ChoreValidationError::NegativeValue(value_cents));
+    }
+    Ok(())
+}
+
 impl NewChore {
     /// Construct a normalized `NewChore`: description is trimmed, value_cents defaults to 0.
     pub fn new(
@@ -103,15 +116,58 @@ impl NewChore {
         self.recurrence.as_ref()
     }
 
-    /// Validate the chore input, returning an error if the description is blank or value is negative.
     pub fn validate(&self) -> Result<(), ChoreValidationError> {
-        if self.description.is_empty() {
-            return Err(ChoreValidationError::BlankDescription);
+        validate_description_and_value(&self.description, self.value_cents)
+    }
+}
+
+/// Normalized input for updating an existing chore.
+///
+/// Constructed via `ChoreUpdate::new()`, which trims the description. Fields
+/// are private to ensure all instances are normalized. Unlike `NewChore`,
+/// carries `is_active` since an update can flip it; creation always starts
+/// a chore active.
+#[derive(Debug, Clone)]
+pub struct ChoreUpdate {
+    description: String,
+    value_cents: i64,
+    recurrence: Option<Recurrence>,
+    is_active: bool,
+}
+
+impl ChoreUpdate {
+    pub fn new(
+        description: impl Into<String>,
+        value_cents: i64,
+        recurrence: Option<Recurrence>,
+        is_active: bool,
+    ) -> Self {
+        ChoreUpdate {
+            description: description.into().trim().to_string(),
+            value_cents,
+            recurrence,
+            is_active,
         }
-        if self.value_cents < 0 {
-            return Err(ChoreValidationError::NegativeValue(self.value_cents));
-        }
-        Ok(())
+    }
+
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+
+    pub fn value_cents(&self) -> i64 {
+        self.value_cents
+    }
+
+    pub fn recurrence(&self) -> Option<&Recurrence> {
+        self.recurrence.as_ref()
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.is_active
+    }
+
+    pub fn validate(&self) -> Result<(), ChoreValidationError> {
+        validate_description_and_value(&self.description, self.value_cents)
     }
 }
 
@@ -222,5 +278,49 @@ mod tests {
             Recurrence::from_cron("5 4 * * sun"),
             Recurrence::Custom("5 4 * * sun".to_string()),
         );
+    }
+
+    #[test]
+    fn chore_update_construction_trims_description() {
+        let update = ChoreUpdate::new("  Dishes  ", 0, None, true);
+        assert_eq!(update.description(), "Dishes");
+    }
+
+    #[test]
+    fn chore_update_preserves_value_cents_recurrence_and_is_active() {
+        let update = ChoreUpdate::new("Sweep", 150, Some(Recurrence::Weekly), false);
+        assert_eq!(update.value_cents(), 150);
+        assert_eq!(update.recurrence(), Some(&Recurrence::Weekly));
+        assert!(!update.is_active());
+    }
+
+    #[test]
+    fn valid_chore_update_passes_validation() {
+        assert!(ChoreUpdate::new("Take out trash", 100, None, true)
+            .validate()
+            .is_ok());
+    }
+
+    #[test]
+    fn chore_update_blank_description_is_rejected() {
+        assert_eq!(
+            ChoreUpdate::new("   ", 50, None, true).validate(),
+            Err(ChoreValidationError::BlankDescription)
+        );
+    }
+
+    #[test]
+    fn chore_update_negative_value_cents_is_rejected() {
+        assert_eq!(
+            ChoreUpdate::new("Mow lawn", -1, None, true).validate(),
+            Err(ChoreValidationError::NegativeValue(-1))
+        );
+    }
+
+    #[test]
+    fn chore_update_zero_value_cents_is_valid() {
+        assert!(ChoreUpdate::new("Water plants", 0, None, true)
+            .validate()
+            .is_ok());
     }
 }
