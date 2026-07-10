@@ -44,6 +44,7 @@ impl IntoResponse for ApiError {
                 StatusCode::UNPROCESSABLE_ENTITY,
                 "one or more assignee IDs do not exist".to_string(),
             ),
+            ServiceError::NotFound => (StatusCode::NOT_FOUND, "chore not found".to_string()),
             ServiceError::Repo(e) => {
                 tracing::error!(error = %e, "database error in handler");
                 (

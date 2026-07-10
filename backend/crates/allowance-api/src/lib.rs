@@ -7,7 +7,7 @@ pub mod routes;
 
 use axum::{
     http::{header, HeaderValue, Method},
-    routing::get,
+    routing::{get, put},
     Router,
 };
 use sqlx::PgPool;
@@ -68,6 +68,32 @@ mod tests {
             .map(|v| v.to_str().unwrap_or(""));
         assert_ne!(allow_origin, Some("http://evil.example.com"));
     }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn cors_allows_put_preflight_for_chore_updates(pool: PgPool) {
+        let app = build_router(pool, "http://localhost:5173");
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::OPTIONS)
+                    .uri("/api/v1/chores/00000000-0000-0000-0000-000000000000")
+                    .header("Origin", "http://localhost:5173")
+                    .header("Access-Control-Request-Method", "PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let allow_methods = response
+            .headers()
+            .get("access-control-allow-methods")
+            .unwrap()
+            .to_str()
+            .unwrap();
+        assert!(allow_methods.contains("PUT"));
+    }
 }
 
 /// Build and return the application router, wired to the given database pool.
@@ -78,7 +104,7 @@ pub fn build_router(pool: PgPool, cors_origin: &str) -> Router {
                 .parse::<HeaderValue>()
                 .expect("invalid CORS origin"),
         )
-        .allow_methods([Method::GET, Method::POST])
+        .allow_methods([Method::GET, Method::POST, Method::PUT])
         .allow_headers([header::CONTENT_TYPE]);
 
     Router::new()
@@ -87,6 +113,7 @@ pub fn build_router(pool: PgPool, cors_origin: &str) -> Router {
             "/api/v1/chores",
             get(routes::chores_query::get_chores).post(routes::chores::post_chore),
         )
+        .route("/api/v1/chores/:id", put(routes::chores::put_chore))
         .route("/api/v1/people", get(routes::people::get_people))
         .with_state(pool)
         .layer(cors)

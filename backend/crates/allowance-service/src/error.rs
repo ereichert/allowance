@@ -10,6 +10,8 @@ pub enum ServiceError {
     Validation(#[from] ChoreValidationError),
     #[error("one or more assignee IDs do not exist")]
     UnknownAssignees,
+    #[error("chore not found")]
+    NotFound,
     #[error("database error: {0}")]
     Repo(#[from] RepoError),
 }

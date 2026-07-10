@@ -1,7 +1,9 @@
 //! Service operations for chores.
 
-pub use allowance_domain::NewChore;
-use allowance_domain::{Chore, ChoreAssignment, NewChoreAssignment, PersonId};
+use allowance_domain::{
+    Chore, ChoreAssignee, ChoreAssignment, ChoreId, NewChoreAssignment, PersonId,
+};
+pub use allowance_domain::{ChoreUpdate, NewChore};
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -61,15 +63,89 @@ pub async fn create_chore(
     Ok(CreateChoreResult { chore, assignments })
 }
 
+/// `assignees` follows the same "distinct people, any status" contract as `GET /chores`.
+#[derive(Debug)]
+pub struct UpdateChoreResult {
+    pub chore: Chore,
+    pub assignees: Vec<ChoreAssignee>,
+}
+
+/// Update a chore's fields and reconcile its assignees to `assignee_ids`.
+///
+/// Assignees present in `assignee_ids` but not currently assigned get a new
+/// `Pending` assignment; assignees currently assigned but absent from
+/// `assignee_ids` have only their `Pending` rows removed — Completed/Verified/
+/// Skipped rows are left alone, so a person may still appear in the returned
+/// list after being unchecked.
+pub async fn update_chore(
+    pool: &PgPool,
+    chore_id: ChoreId,
+    update: ChoreUpdate,
+    assignee_ids: Vec<Uuid>,
+) -> Result<UpdateChoreResult, ServiceError> {
+    update.validate()?;
+
+    if !assignee_ids.is_empty() {
+        let all_exist = allowance_repo::chore::all_people_exist(pool, &assignee_ids).await?;
+        if !all_exist {
+            return Err(ServiceError::UnknownAssignees);
+        }
+    }
+
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(allowance_repo::RepoError::Database)?;
+
+    let chore = allowance_repo::chore::update_chore_tx(&mut tx, chore_id, &update)
+        .await?
+        .ok_or(ServiceError::NotFound)?;
+
+    let current_ids =
+        allowance_repo::chore::current_assignee_person_ids_tx(&mut tx, chore_id).await?;
+
+    let to_add: Vec<NewChoreAssignment> = assignee_ids
+        .iter()
+        .filter(|id| !current_ids.contains(id))
+        .map(|person_uuid| NewChoreAssignment {
+            chore_id,
+            person_id: PersonId(*person_uuid),
+            assigned_by: None,
+            due_at: None,
+        })
+        .collect();
+    allowance_repo::chore::insert_assignments_bulk_tx(&mut tx, &to_add).await?;
+
+    let to_remove: Vec<Uuid> = current_ids
+        .into_iter()
+        .filter(|id| !assignee_ids.contains(id))
+        .collect();
+    allowance_repo::chore::delete_pending_assignments_tx(&mut tx, chore_id, &to_remove).await?;
+
+    tx.commit()
+        .await
+        .map_err(allowance_repo::RepoError::Database)?;
+
+    let mut assignees_by_chore =
+        allowance_repo::chore_query::list_assignees_for_chores(pool, &[chore_id]).await?;
+    let assignees = assignees_by_chore.remove(&chore_id).unwrap_or_default();
+
+    Ok(UpdateChoreResult { chore, assignees })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use allowance_domain::NewChore;
-    use allowance_test_helpers::seed_person;
+    use allowance_domain::{NewChore, Recurrence};
+    use allowance_test_helpers::{insert_assignment, seed_chore, seed_person};
     use sqlx::PgPool;
 
     fn input(description: &str) -> NewChore {
         NewChore::new(description, None, None)
+    }
+
+    fn update(description: &str, value_cents: i64, is_active: bool) -> ChoreUpdate {
+        ChoreUpdate::new(description, value_cents, None, is_active)
     }
 
     #[sqlx::test(migrations = "../../migrations")]
@@ -128,5 +204,155 @@ mod tests {
             .await
             .unwrap_err();
         assert!(matches!(err, ServiceError::UnknownAssignees));
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_updates_all_fields(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+
+        let result = update_chore(
+            &pool,
+            ChoreId(chore_id),
+            ChoreUpdate::new("Sweep back porch", 250, Some(Recurrence::Weekly), false),
+            vec![],
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(result.chore.description, "Sweep back porch");
+        assert_eq!(result.chore.value_cents, 250);
+        assert_eq!(result.chore.recurrence, Some(Recurrence::Weekly));
+        assert!(!result.chore.is_active);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_adds_pending_assignment_for_new_person(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+        let alice = seed_person(&pool, "Alice").await;
+
+        let result = update_chore(
+            &pool,
+            ChoreId(chore_id),
+            update("Sweep porch", 100, true),
+            vec![alice],
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(result.assignees.len(), 1);
+        assert_eq!(result.assignees[0].id.0, alice);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_removes_person_with_only_pending_assignment(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+        let alice = seed_person(&pool, "Alice").await;
+        insert_assignment(&pool, chore_id, alice, "Pending").await;
+
+        let result = update_chore(
+            &pool,
+            ChoreId(chore_id),
+            update("Sweep porch", 100, true),
+            vec![],
+        )
+        .await
+        .unwrap();
+
+        assert!(result.assignees.is_empty());
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_keeps_person_with_completed_assignment_in_list(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+        let alice = seed_person(&pool, "Alice").await;
+        insert_assignment(&pool, chore_id, alice, "Completed").await;
+
+        let result = update_chore(
+            &pool,
+            ChoreId(chore_id),
+            update("Sweep porch", 100, true),
+            vec![],
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(result.assignees.len(), 1);
+        assert_eq!(result.assignees[0].id.0, alice);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_leaves_untouched_assignee_alone(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+        let alice = seed_person(&pool, "Alice").await;
+        insert_assignment(&pool, chore_id, alice, "Pending").await;
+
+        let result = update_chore(
+            &pool,
+            ChoreId(chore_id),
+            update("Sweep porch", 100, true),
+            vec![alice],
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(result.assignees.len(), 1);
+        assert_eq!(result.assignees[0].id.0, alice);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_rejects_blank_description(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+
+        let err = update_chore(&pool, ChoreId(chore_id), update("  ", 100, true), vec![])
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, ServiceError::Validation(_)));
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_rejects_negative_value(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+
+        let err = update_chore(
+            &pool,
+            ChoreId(chore_id),
+            update("Sweep porch", -1, true),
+            vec![],
+        )
+        .await
+        .unwrap_err();
+
+        assert!(matches!(err, ServiceError::Validation(_)));
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_rejects_unknown_assignee(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+
+        let err = update_chore(
+            &pool,
+            ChoreId(chore_id),
+            update("Sweep porch", 100, true),
+            vec![Uuid::new_v4()],
+        )
+        .await
+        .unwrap_err();
+
+        assert!(matches!(err, ServiceError::UnknownAssignees));
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_returns_not_found_for_nonexistent_id(pool: PgPool) {
+        let err = update_chore(
+            &pool,
+            ChoreId(Uuid::new_v4()),
+            update("Ghost chore", 0, true),
+            vec![],
+        )
+        .await
+        .unwrap_err();
+
+        assert!(matches!(err, ServiceError::NotFound));
     }
 }

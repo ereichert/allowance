@@ -1,6 +1,6 @@
 //! Handler for listing chores.
 
-use super::chores::ChoreResponse;
+use super::chores::{AssigneeResponse, ChoreListItemResponse, ChoreResponse};
 use super::ApiError;
 use super::PaginatedResponse;
 use allowance_domain::Recurrence;
@@ -11,28 +11,14 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use sqlx::PgPool;
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct ChoreQueryParams {
     pub page: Option<i64>,
     pub per_page: Option<i64>,
     pub description: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct AssigneeResponse {
-    pub id: Uuid,
-    pub name: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ChoreListItemResponse {
-    #[serde(flatten)]
-    pub chore: ChoreResponse,
-    pub assignees: Vec<AssigneeResponse>,
 }
 
 /// `GET /api/v1/chores` — list all chores with optional description search and pagination.

@@ -156,6 +156,65 @@ if they hold multiple assignment records for it. Sorted by name, ascending.
 
 ---
 
+### PUT /api/v1/chores/:id
+
+Updates a chore. This is a full replace — the request must include every
+field below, not just the ones that changed. `assignee_ids` is the complete
+desired set of assignees: people in the set who aren't currently assigned get
+a new `Pending` assignment; currently-assigned people left out of the set
+have only their `Pending` assignment(s) removed — `Completed`/`Verified`/
+`Skipped` assignments are preserved, so such a person may still appear in the
+response's `assignees` (same "any status" contract as `GET /chores`).
+
+#### Request body
+
+```json
+{
+  "description": "Take out trash",
+  "value_cents": 150,
+  "is_active": true,
+  "recurrence_cron": null,
+  "assignee_ids": ["uuid-1", "uuid-2"]
+}
+```
+
+- `description` — required, must not be blank
+- `value_cents` — required, integer cents, must be non-negative
+- `is_active` — required
+- `recurrence_cron` — required key, nullable; `null` means single-occurrence
+- `assignee_ids` — required, array of Person UUIDs (may be empty)
+
+#### Response `200 OK`
+
+Same shape as a `GET /chores` item:
+
+```json
+{
+  "id": "uuid",
+  "description": "Take out trash",
+  "value_cents": 150,
+  "recurrence_cron": null,
+  "is_active": true,
+  "created_at": "2026-04-02T12:00:00Z",
+  "updated_at": "2026-04-05T09:00:00Z",
+  "assignees": [
+    { "id": "uuid-1", "name": "Alice" },
+    { "id": "uuid-2", "name": "Bob" }
+  ]
+}
+```
+
+#### Errors
+
+| Status | Condition                                      |
+|--------|------------------------------------------------|
+| 400    | `description` blank or `value_cents` negative  |
+| 404    | No chore with the given `:id`                  |
+| 422    | An `assignee_id` does not exist                |
+| 500    | Unexpected server error                        |
+
+---
+
 ### GET /api/v1/people
 
 Returns a paginated list of people (used to populate the assignee multi-select).
