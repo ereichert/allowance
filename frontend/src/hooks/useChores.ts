@@ -12,15 +12,17 @@ export interface UseChoresReturn {
   loading: boolean
   error: string | null
   totalPages: number
+  refetch: () => void
 }
 
-/** Fetches a page of chores, refetching whenever `page` changes. */
+/** Fetches a page of chores, refetching whenever `page` changes or `refetch` is called. */
 export function useChores(page: number): UseChoresReturn {
   const [chores, setChores] = useState<ChoreListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [total, setTotal] = useState(0)
   const [fetchedPage, setFetchedPage] = useState(page)
+  const [refetchToken, setRefetchToken] = useState(0)
 
   if (page !== fetchedPage) {
     setFetchedPage(page)
@@ -41,9 +43,13 @@ export function useChores(page: number): UseChoresReturn {
       .finally(() => {
         setLoading(false)
       })
-  }, [page])
+  }, [page, refetchToken])
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
 
-  return { chores, loading, error, totalPages }
+  function refetch() {
+    setRefetchToken((t) => t + 1)
+  }
+
+  return { chores, loading, error, totalPages, refetch }
 }
