@@ -1,8 +1,8 @@
 //! Repository operations for chores and their assignments.
 
 use allowance_domain::{
-    AssignmentId, AssignmentStatus, Chore, ChoreAssignment, ChoreId, NewChore, NewChoreAssignment,
-    PersonId, Recurrence,
+    AssignmentId, AssignmentStatus, Chore, ChoreAssignment, ChoreId, ChoreUpdate, NewChore,
+    NewChoreAssignment, PersonId, Recurrence,
 };
 use chrono::{DateTime, Utc};
 use sqlx::{PgPool, Postgres, Transaction};
@@ -94,6 +94,32 @@ pub async fn insert_chore_tx(
     Ok(Chore::from(row))
 }
 
+pub async fn update_chore_tx(
+    tx: &mut Transaction<'_, Postgres>,
+    chore_id: ChoreId,
+    update: &ChoreUpdate,
+) -> Result<Option<Chore>, RepoError> {
+    let recurrence_cron = update.recurrence().map(Recurrence::to_cron);
+    let row = sqlx::query_as!(
+        ChoreRow,
+        r#"
+        UPDATE chores
+        SET description = $1, value_cents = $2, recurrence_cron = $3, is_active = $4, updated_at = now()
+        WHERE id = $5
+        RETURNING id, description, value_cents, recurrence_cron, is_active, created_at, updated_at
+        "#,
+        update.description(),
+        update.value_cents(),
+        recurrence_cron,
+        update.is_active(),
+        chore_id.0,
+    )
+    .fetch_optional(&mut **tx)
+    .await?;
+
+    Ok(row.map(Chore::from))
+}
+
 /// Bulk-insert chore assignments within an open transaction using UNNEST.
 /// Returns assignments in the same order as the new assignments.
 pub async fn insert_assignments_bulk_tx(
@@ -151,12 +177,52 @@ pub async fn all_people_exist(pool: &PgPool, ids: &[Uuid]) -> Result<bool, RepoE
     Ok(count == ids.len() as i64)
 }
 
+pub async fn current_assignee_person_ids_tx(
+    tx: &mut Transaction<'_, Postgres>,
+    chore_id: ChoreId,
+) -> Result<Vec<Uuid>, RepoError> {
+    let ids = sqlx::query_scalar!(
+        r#"SELECT DISTINCT person_id FROM chore_assignments WHERE chore_id = $1"#,
+        chore_id.0,
+    )
+    .fetch_all(&mut **tx)
+    .await?;
+
+    Ok(ids)
+}
+
+/// Delete only the `Pending` assignment rows for the given people on the given
+/// chore, leaving Completed/Verified/Skipped rows (and other people's rows)
+/// untouched so completion history isn't destroyed by unchecking an assignee.
+pub async fn delete_pending_assignments_tx(
+    tx: &mut Transaction<'_, Postgres>,
+    chore_id: ChoreId,
+    person_ids: &[Uuid],
+) -> Result<(), RepoError> {
+    if person_ids.is_empty() {
+        return Ok(());
+    }
+
+    sqlx::query!(
+        r#"
+        DELETE FROM chore_assignments
+        WHERE chore_id = $1 AND person_id = ANY($2) AND status = 'Pending'
+        "#,
+        chore_id.0,
+        person_ids,
+    )
+    .execute(&mut **tx)
+    .await?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use sqlx::PgPool;
 
-    use allowance_test_helpers::seed_person;
+    use allowance_test_helpers::{insert_assignment, seed_chore, seed_person};
 
     fn new_chore(description: &str, value_cents: Option<i64>) -> NewChore {
         NewChore::new(description, value_cents, None)
@@ -406,5 +472,175 @@ mod tests {
         tx.commit().await.unwrap();
 
         assert_eq!(assignments[0].assigned_by, Some(PersonId(bob)));
+    }
+
+    fn chore_update(
+        description: &str,
+        value_cents: i64,
+        recurrence: Option<Recurrence>,
+        is_active: bool,
+    ) -> ChoreUpdate {
+        ChoreUpdate::new(description, value_cents, recurrence, is_active)
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_tx_persists_description_value_and_is_active(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+
+        let mut tx = pool.begin().await.unwrap();
+        let updated = update_chore_tx(
+            &mut tx,
+            ChoreId(chore_id),
+            &chore_update("Sweep back porch", 250, None, false),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        tx.commit().await.unwrap();
+
+        assert_eq!(updated.description, "Sweep back porch");
+        assert_eq!(updated.value_cents, 250);
+        assert!(!updated.is_active);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_tx_persists_recurrence(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Take out trash", 100).await;
+
+        let mut tx = pool.begin().await.unwrap();
+        let updated = update_chore_tx(
+            &mut tx,
+            ChoreId(chore_id),
+            &chore_update("Take out trash", 100, Some(Recurrence::Weekly), true),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        tx.commit().await.unwrap();
+
+        assert_eq!(updated.recurrence, Some(Recurrence::Weekly));
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn update_chore_tx_returns_none_for_nonexistent_id(pool: PgPool) {
+        let mut tx = pool.begin().await.unwrap();
+        let result = update_chore_tx(
+            &mut tx,
+            ChoreId(Uuid::new_v4()),
+            &chore_update("Ghost chore", 0, None, true),
+        )
+        .await
+        .unwrap();
+        tx.commit().await.unwrap();
+
+        assert!(result.is_none());
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn current_assignee_person_ids_tx_returns_distinct_ids_across_statuses(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+        let alice = seed_person(&pool, "Alice").await;
+        let bob = seed_person(&pool, "Bob").await;
+        insert_assignment(&pool, chore_id, alice, "Pending").await;
+        insert_assignment(&pool, chore_id, bob, "Completed").await;
+
+        let mut tx = pool.begin().await.unwrap();
+        let mut ids = current_assignee_person_ids_tx(&mut tx, ChoreId(chore_id))
+            .await
+            .unwrap();
+        tx.commit().await.unwrap();
+
+        ids.sort();
+        let mut expected = vec![alice, bob];
+        expected.sort();
+        assert_eq!(ids, expected);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn current_assignee_person_ids_tx_returns_empty_for_no_assignments(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+
+        let mut tx = pool.begin().await.unwrap();
+        let ids = current_assignee_person_ids_tx(&mut tx, ChoreId(chore_id))
+            .await
+            .unwrap();
+        tx.commit().await.unwrap();
+
+        assert!(ids.is_empty());
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn delete_pending_assignments_tx_removes_only_pending_rows_for_given_people(
+        pool: PgPool,
+    ) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+        let alice = seed_person(&pool, "Alice").await;
+        insert_assignment(&pool, chore_id, alice, "Pending").await;
+        insert_assignment(&pool, chore_id, alice, "Completed").await;
+
+        let mut tx = pool.begin().await.unwrap();
+        delete_pending_assignments_tx(&mut tx, ChoreId(chore_id), &[alice])
+            .await
+            .unwrap();
+        tx.commit().await.unwrap();
+
+        let remaining_statuses: Vec<String> = sqlx::query_scalar(
+            "SELECT status::text FROM chore_assignments WHERE chore_id = $1 AND person_id = $2",
+        )
+        .bind(chore_id)
+        .bind(alice)
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+
+        assert_eq!(remaining_statuses, vec!["Completed".to_string()]);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn delete_pending_assignments_tx_leaves_other_peoples_rows_untouched(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+        let alice = seed_person(&pool, "Alice").await;
+        let bob = seed_person(&pool, "Bob").await;
+        insert_assignment(&pool, chore_id, alice, "Pending").await;
+        insert_assignment(&pool, chore_id, bob, "Pending").await;
+
+        let mut tx = pool.begin().await.unwrap();
+        delete_pending_assignments_tx(&mut tx, ChoreId(chore_id), &[alice])
+            .await
+            .unwrap();
+        tx.commit().await.unwrap();
+
+        let bob_count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM chore_assignments WHERE chore_id = $1 AND person_id = $2",
+        )
+        .bind(chore_id)
+        .bind(bob)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+        assert_eq!(bob_count, 1);
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn delete_pending_assignments_tx_is_noop_for_empty_person_ids(pool: PgPool) {
+        let chore_id = seed_chore(&pool, "Sweep porch", 100).await;
+        let alice = seed_person(&pool, "Alice").await;
+        insert_assignment(&pool, chore_id, alice, "Pending").await;
+
+        let mut tx = pool.begin().await.unwrap();
+        delete_pending_assignments_tx(&mut tx, ChoreId(chore_id), &[])
+            .await
+            .unwrap();
+        tx.commit().await.unwrap();
+
+        let count: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM chore_assignments WHERE chore_id = $1")
+                .bind(chore_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+
+        assert_eq!(count, 1);
     }
 }
