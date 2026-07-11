@@ -28,11 +28,11 @@ docs win.
    branches, and local git state.
 3. Route on that state — resume, never redo:
    - Issue `CLOSED` and no open sub-issues → report there is nothing to do.
-   - An `OPEN` PR exists for this issue → go to **Phase 3** (if `/review-pr`
-     skips it as already reviewed at head, the PR is awaiting merge — report
-     that and stop).
-   - Open sub-issues exist → take the lowest-numbered open sub-issue and go
-     to **Phase 2** for it.
+   - An `OPEN` PR exists for this issue → go to **Phase 3**.
+   - Open sub-issues exist → take the lowest-numbered open sub-issue,
+     re-run `state.sh` for it, and re-route on that packet — the sub-issue's
+     own PRs and feature branch only show up there, and jumping straight to
+     Phase 2 would redo work already sitting in an open PR.
    - `PLAN recorded`, or the issue has a parent (a sub-issue's body *is* its
      plan) → go to **Phase 2**.
    - Otherwise → **Phase 1**.
@@ -81,6 +81,9 @@ Notes on specific steps:
 
 - **1** — if the worktree is dirty with unrelated changes, stop and ask the
   user; never stash or discard someone's work.
+- **2** — if the feature branch already exists (locally or on origin),
+  check it out and continue from the first unmet checklist item instead of
+  re-creating it.
 - **3** — the full suite comes before any production code (test-first, per
   CLAUDE.md). Tests are named for their scenario; no explanatory comments.
 - **9** — `gh pr create --base develop` with title `[<n>] Short summary`,
@@ -95,7 +98,12 @@ Notes on specific steps:
 
 For the open PR, repeat up to three times:
 
-1. Invoke `/review-pr <PR#>`.
+1. Invoke `/review-pr <PR#>`. If it skips because the PR was already
+   reviewed at the current head, that review's findings may still be
+   unaddressed — fetch its inline comments
+   (`gh api repos/{owner}/{repo}/pulls/<PR#>/comments`); any that no later
+   commit or reply resolves are this cycle's findings (step 3). None →
+   **Phase 4**.
 2. If the review posts no findings → **Phase 4**.
 3. Address every finding: fix it, or — when the finding is genuinely wrong —
    reply on its comment thread explaining why, so nothing is silently
