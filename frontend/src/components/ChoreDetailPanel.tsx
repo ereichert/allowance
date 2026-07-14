@@ -45,7 +45,12 @@ export function ChoreDetailPanel({
       </button>
       <h2 className="chore-detail-panel__title">Chore details</h2>
 
-      <ChoreDetailForm chore={chore} onSaved={onSaved} onDirtyChange={onDirtyChange} />
+      <ChoreDetailForm
+        key={chore.id}
+        chore={chore}
+        onSaved={onSaved}
+        onDirtyChange={onDirtyChange}
+      />
 
       <dl className="chore-detail-panel__fields">
         <dt>Recurrence</dt>

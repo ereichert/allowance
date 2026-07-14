@@ -23,7 +23,7 @@ export function ChoreDetailForm({ chore, onSaved, onDirtyChange }: ChoreDetailFo
     valueDollars: centsToDollarsInput(chore.value_cents),
     isActive: chore.is_active,
   })
-  const { submit, status, errorMessage } = useUpdateChore()
+  const { submit, status, errorMessage, reset } = useUpdateChore()
 
   const isDirty =
     description !== savedSnapshot.description ||
@@ -33,6 +33,10 @@ export function ChoreDetailForm({ chore, onSaved, onDirtyChange }: ChoreDetailFo
   useEffect(() => {
     onDirtyChange(isDirty)
   }, [isDirty, onDirtyChange])
+
+  useEffect(() => {
+    if (isDirty && status === 'success') reset()
+  }, [isDirty, status, reset])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

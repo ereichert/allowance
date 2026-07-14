@@ -119,6 +119,30 @@ describe('ChoreDetailPanel', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it('resets form fields to the new chore when switching chores without closing', () => {
+    const otherChore: ChoreListItem = {
+      id: 'c2',
+      description: 'Wash dishes',
+      value_cents: 300,
+      recurrence_cron: null,
+      is_active: false,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-02T08:30:00Z',
+      assignees: [],
+    }
+    const { rerender } = render(
+      <ChoreDetailPanel chore={baseChore} onClose={vi.fn()} onSaved={vi.fn()} onDirtyChange={vi.fn()} />,
+    )
+
+    rerender(
+      <ChoreDetailPanel chore={otherChore} onClose={vi.fn()} onSaved={vi.fn()} onDirtyChange={vi.fn()} />,
+    )
+
+    expect(screen.getByLabelText(/description/i)).toHaveValue('Wash dishes')
+    expect(screen.getByLabelText(/value/i)).toHaveValue(3)
+    expect(screen.getByLabelText(/status/i)).toHaveValue('inactive')
+  })
+
   it('does not call onClose on Escape after the panel has already closed', async () => {
     const onClose = vi.fn()
     const { rerender } = render(

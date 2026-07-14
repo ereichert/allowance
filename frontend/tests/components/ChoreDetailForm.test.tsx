@@ -150,4 +150,15 @@ describe('ChoreDetailForm', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('server exploded')
   })
+
+  it('clears the saved-successfully message after editing a field again', async () => {
+    mockUpdateChore.mockResolvedValueOnce(baseChore)
+    render(<ChoreDetailForm chore={baseChore} onSaved={vi.fn()} onDirtyChange={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(await screen.findByRole('status')).toHaveTextContent('Chore saved successfully.')
+
+    await userEvent.type(screen.getByLabelText(/description/i), ' again')
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
 })
