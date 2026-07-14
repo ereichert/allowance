@@ -78,6 +78,30 @@ files.
 Run it before committing. It is not currently wired into the pre-commit hook
 or the Stop hook — it's a deliberate, on-demand check, not an automatic gate.
 
+## Development Workflow
+
+The `/develop` skill drives the full delivery workflow for a GitHub issue or
+an inline spec: `/develop 42` or `/develop <description of the change>`.
+
+1. **Resolve** — finds or (with confirmation) creates the GitHub issue, then
+   reads recorded state (plan, sub-issues, open PRs) so a re-trigger resumes
+   wherever work left off.
+2. **Plan** — enters plan mode until the plan is accepted; skipped, with
+   confirmation, when the work is trivial or a plan is already recorded. The
+   accepted plan is posted as a comment on the issue. Work expected to exceed
+   500 changed lines (tests included) is split into GitHub sub-issues, one PR
+   each.
+3. **Deliver** — per issue: failing tests first, implement to green, format,
+   lint, comment audit, commit, PR — the [Task Completion
+   Checklist](#task-completion-checklist) below, in order.
+4. **Review** — runs `/review-pr` on the PR and addresses findings, up to
+   three cycles. Findings still unresolved after three cycles escalate: the
+   PR gets a `needs-human` label and a summary comment, and the agent stops.
+
+The agent never merges. When a PR is review-clean it hands off and stops;
+after you merge, re-trigger `/develop <issue number>` to continue with the
+next sub-issue.
+
 ## Task Completion Checklist
 
 Before ending any task that modifies code:

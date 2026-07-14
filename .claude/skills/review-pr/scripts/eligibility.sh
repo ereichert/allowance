@@ -8,16 +8,17 @@ command -v gh > /dev/null || {
 
 pr="${1:?usage: eligibility.sh <PR number>}"
 
-info="$(gh pr view "$pr" --json state,isDraft,author,reviews --jq '
+info="$(gh pr view "$pr" --json state,isDraft,author,reviews,headRefOid --jq '
+  .headRefOid as $head |
   [
     .state,
     (.isDraft | tostring),
     .author.login,
-    ([.reviews[] | select(.body | contains("Adversarial code review"))] | length | tostring)
+    ([.reviews[] | select((.body | contains("Adversarial code review")) and .commit.oid == $head)] | length | tostring)
   ] | join("\t")
 ')"
 
-IFS=$'\t' read -r state is_draft author prior_reviews <<<"$info"
+IFS=$'\t' read -r state is_draft author reviews_at_head <<<"$info"
 
 if [[ "$state" != "OPEN" ]]; then
   echo "SKIP: PR #$pr is $state"
@@ -36,8 +37,8 @@ case "$author" in
     ;;
 esac
 
-if [[ "$prior_reviews" != "0" ]]; then
-  echo "SKIP: already reviewed ($prior_reviews adversarial review(s) found)"
+if [[ "$reviews_at_head" != "0" ]]; then
+  echo "SKIP: already adversarially reviewed at the current head commit"
   exit 0
 fi
 
