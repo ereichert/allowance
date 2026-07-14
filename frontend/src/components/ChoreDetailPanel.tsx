@@ -3,16 +3,23 @@
 
 import { useEffect } from 'react'
 import type { ChoreListItem } from '../types/chore'
-import { formatValue } from '../utils/currency'
 import { formatTimestamp } from '../utils/datetime'
+import { ChoreDetailForm } from './ChoreDetailForm'
 import './ChoreDetailPanel.css'
 
 interface ChoreDetailPanelProps {
   chore: ChoreListItem | null
   onClose: () => void
+  onSaved: () => void
+  onDirtyChange: (dirty: boolean) => void
 }
 
-export function ChoreDetailPanel({ chore, onClose }: ChoreDetailPanelProps) {
+export function ChoreDetailPanel({
+  chore,
+  onClose,
+  onSaved,
+  onDirtyChange,
+}: ChoreDetailPanelProps) {
   useEffect(() => {
     if (!chore) return
 
@@ -36,14 +43,11 @@ export function ChoreDetailPanel({ chore, onClose }: ChoreDetailPanelProps) {
       >
         &times;
       </button>
-      <h2 className="chore-detail-panel__title">{chore.description}</h2>
+      <h2 className="chore-detail-panel__title">Chore details</h2>
+
+      <ChoreDetailForm chore={chore} onSaved={onSaved} onDirtyChange={onDirtyChange} />
+
       <dl className="chore-detail-panel__fields">
-        <dt>Status</dt>
-        <dd>{chore.is_active ? 'Active' : 'Inactive'}</dd>
-
-        <dt>Value</dt>
-        <dd>{formatValue(chore.value_cents)}</dd>
-
         <dt>Recurrence</dt>
         <dd>{chore.recurrence_cron ?? 'One-time'}</dd>
 
