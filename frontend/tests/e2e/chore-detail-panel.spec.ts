@@ -20,8 +20,8 @@ test('clicking a chore row opens its detail panel, closable by button or Escape'
 
   const panel = page.getByRole('dialog', { name: 'Chore details' })
   await expect(panel).toBeVisible()
-  await expect(panel).toContainText(description)
-  await expect(panel).toContainText('$2.50')
+  await expect(panel.getByLabel('Description')).toHaveValue(description)
+  await expect(panel.getByLabel('Value (dollars)')).toHaveValue('2.50')
 
   await page.getByRole('button', { name: /close/i }).click()
   await expect(panel).not.toBeVisible()
@@ -51,7 +51,7 @@ test('a keyboard user can open the detail panel without a mouse', async ({ page 
 
   const panel = page.getByRole('dialog', { name: 'Chore details' })
   await expect(panel).toBeVisible()
-  await expect(panel).toContainText(description)
+  await expect(panel.getByLabel('Description')).toHaveValue(description)
 })
 
 test('a keyboard user can open and close the detail panel with arrow keys', async ({ page }) => {

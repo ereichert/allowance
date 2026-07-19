@@ -68,7 +68,12 @@ export function ShowChoresPage() {
     <div className="show-chores-page">
       <StatusMessage status={error ? 'error' : 'idle'} message={error} />
       {renderBody()}
-      <ChoreDetailPanel chore={selectedChore} onClose={handleCloseDetail} />
+      <ChoreDetailPanel
+        chore={selectedChore}
+        onClose={handleCloseDetail}
+        onSaved={() => {}}
+        onDirtyChange={() => {}}
+      />
     </div>
   )
 }

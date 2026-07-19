@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useSearchParams } from 'react-router-dom'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
@@ -186,7 +186,7 @@ describe('ShowChoresPage', () => {
     await userEvent.click(screen.getByRole('row', { name: /take out trash/i }))
 
     const panel = screen.getByRole('dialog', { name: 'Chore details' })
-    expect(panel).toHaveTextContent('Take out trash')
+    expect(within(panel).getByLabelText(/description/i)).toHaveValue('Take out trash')
   })
 
   it('closes the chore detail panel when its close button is clicked', async () => {
@@ -217,7 +217,7 @@ describe('ShowChoresPage', () => {
     await userEvent.keyboard('{ArrowRight}')
 
     const panel = screen.getByRole('dialog', { name: 'Chore details' })
-    expect(panel).toHaveTextContent('Take out trash')
+    expect(within(panel).getByLabelText(/description/i)).toHaveValue('Take out trash')
   })
 
   it('closes the chore detail panel when Left is pressed on a focused row', async () => {
