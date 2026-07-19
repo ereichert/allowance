@@ -60,6 +60,33 @@
   appearance: textfield;
 }
 
+.chore-detail-form__assignees {
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 12px 16px;
+  background: var(--color-white);
+}
+
+.chore-detail-form__assignees-list {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.chore-detail-form__assignees legend {
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 0 4px;
+}
+
+.chore-detail-form__assignees label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
 .chore-detail-form__actions {
   display: flex;
   justify-content: flex-end;

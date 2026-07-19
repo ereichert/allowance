@@ -4,11 +4,14 @@ import { MemoryRouter, useSearchParams } from 'react-router-dom'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { ShowChoresPage } from '../../src/pages/ShowChoresPage'
 import * as hooks from '../../src/hooks/useChores'
+import * as peopleHooks from '../../src/hooks/usePeople'
 import type { ChoreListItem } from '../../src/types/chore'
 
 vi.mock('../../src/hooks/useChores')
+vi.mock('../../src/hooks/usePeople')
 
 const mockUseChores = vi.mocked(hooks.useChores)
+const mockUsePeople = vi.mocked(peopleHooks.usePeople)
 
 const sampleChore: ChoreListItem = {
   id: 'c1',
@@ -49,6 +52,7 @@ function renderShowChoresPage(initialPath: string) {
 describe('ShowChoresPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockUsePeople.mockReturnValue({ people: [], loading: false, error: null })
   })
 
   it('shows a loading indicator while chores are loading', () => {
