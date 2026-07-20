@@ -2,6 +2,7 @@
 /// when no chore is selected; closes via its close button or the Escape key.
 
 import { useEffect } from 'react'
+import { usePeople } from '../hooks/usePeople'
 import type { ChoreListItem } from '../types/chore'
 import { formatTimestamp } from '../utils/datetime'
 import { ChoreDetailForm } from './ChoreDetailForm'
@@ -20,6 +21,8 @@ export function ChoreDetailPanel({
   onSaved,
   onDirtyChange,
 }: ChoreDetailPanelProps) {
+  const { people } = usePeople()
+
   useEffect(() => {
     if (!chore) return
 
@@ -48,27 +51,12 @@ export function ChoreDetailPanel({
       <ChoreDetailForm
         key={chore.id}
         chore={chore}
+        people={people}
         onSaved={onSaved}
         onDirtyChange={onDirtyChange}
       />
 
       <dl className="chore-detail-panel__fields">
-        <dt>Recurrence</dt>
-        <dd>{chore.recurrence_cron ?? 'One-time'}</dd>
-
-        <dt>Assignees</dt>
-        <dd>
-          {chore.assignees.length === 0 ? (
-            'No assignees'
-          ) : (
-            <ul className="chore-detail-panel__assignees">
-              {chore.assignees.map((assignee) => (
-                <li key={assignee.id}>{assignee.name}</li>
-              ))}
-            </ul>
-          )}
-        </dd>
-
         <dt>Created</dt>
         <dd>{formatTimestamp(chore.created_at)}</dd>
 

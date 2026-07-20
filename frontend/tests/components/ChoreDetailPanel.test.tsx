@@ -1,8 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ChoreDetailPanel } from '../../src/components/ChoreDetailPanel'
+import * as peopleHooks from '../../src/hooks/usePeople'
 import type { ChoreListItem } from '../../src/types/chore'
+
+vi.mock('../../src/hooks/usePeople')
+
+const mockUsePeople = vi.mocked(peopleHooks.usePeople)
 
 const baseChore: ChoreListItem = {
   id: 'c1',
@@ -27,6 +32,11 @@ function renderPanel(chore: ChoreListItem | null, overrides: { onClose?: () => v
 }
 
 describe('ChoreDetailPanel', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockUsePeople.mockReturnValue({ people: [], loading: false, error: null })
+  })
+
   it('renders nothing when chore is null', () => {
     renderPanel(null)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -52,16 +62,6 @@ describe('ChoreDetailPanel', () => {
     expect(screen.getByLabelText(/value/i)).toHaveValue(1.5)
   })
 
-  it('shows "One-time" when recurrence_cron is null', () => {
-    renderPanel(baseChore)
-    expect(screen.getByText('One-time')).toBeInTheDocument()
-  })
-
-  it('shows the raw recurrence cron string when present', () => {
-    renderPanel({ ...baseChore, recurrence_cron: '@daily' })
-    expect(screen.getByText('@daily')).toBeInTheDocument()
-  })
-
   it('pre-fills the status field as Active when the chore is active', () => {
     renderPanel(baseChore)
     expect(screen.getByLabelText(/status/i)).toHaveValue('active')
@@ -72,22 +72,9 @@ describe('ChoreDetailPanel', () => {
     expect(screen.getByLabelText(/status/i)).toHaveValue('inactive')
   })
 
-  it('shows "No assignees" when there are none', () => {
-    renderPanel(baseChore)
-    expect(screen.getByText('No assignees')).toBeInTheDocument()
-  })
-
-  it('lists assignee names when present', () => {
-    const chore = {
-      ...baseChore,
-      assignees: [
-        { id: 'p1', name: 'Alice' },
-        { id: 'p2', name: 'Bob' },
-      ],
-    }
-    renderPanel(chore)
-    const names = screen.getAllByRole('listitem').map((item) => item.textContent)
-    expect(names).toEqual(['Alice', 'Bob'])
+  it('pre-fills the recurrence field with the chore recurrence', () => {
+    renderPanel({ ...baseChore, recurrence_cron: '@daily' })
+    expect(screen.getByLabelText(/recurrence/i)).toHaveValue('daily')
   })
 
   it('renders the chore id', () => {
